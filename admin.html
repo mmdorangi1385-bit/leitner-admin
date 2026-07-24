@@ -270,9 +270,22 @@
 
   @media (max-width: 860px) {
     #app.show { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 10px 12px; }
+    .sidebar {
+      width: 100%; height: auto; position: sticky; top: 0; z-index: 50;
+      flex-direction: row; padding: 10px 12px; gap: 0;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
     .side-brand, .sidebar-foot { display: none; }
-    .drawer-tab { flex-shrink: 0; }
+    /* #drawerTabs is the only visible child of .sidebar on mobile — it needs its own
+       horizontal flex layout, otherwise each .drawer-tab (which is display:flex) collapses
+       to a block box and the tabs stack on top of each other instead of sitting in a row. */
+    #drawerTabs {
+      display: flex; gap: 8px; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #drawerTabs::-webkit-scrollbar { display: none; }
+    .drawer-tab { flex-shrink: 0; white-space: nowrap; }
+    .drawer-tab.active::before { display: none; } /* the vertical accent bar only makes sense in a column layout */
     .main { padding: 18px 16px 50px; }
   }
 </style>
@@ -341,8 +354,7 @@
   // فقط UIDهای زیر اجازه‌ی ورود به پنل مدیریت رو دارن. بعد از ساختن حساب مدیر با ایمیل/رمز از
   // همین فایربیس، UID اون حساب رو (از تب Authentication در کنسول فایربیس) اینجا اضافه کن.
   const ADMIN_UIDS = [
-    "K0aQSr1206SpUJpRX38rDFbI89s2",
-    "QT4asHyr5wfpl6EbuDXMoqBz39v2",
+    // "PASTE_ADMIN_UID_HERE",
   ];
   const ADMIN_ALLOWLIST_DISABLED = ADMIN_UIDS.length === 0; // تا وقتی پر نشده، هر حساب معتبر رو موقتاً می‌پذیریم
 
@@ -553,7 +565,8 @@
       const count = Object.keys(val).length;
       const el = document.querySelector('#statGrid .stat-card:nth-child(1) .stat-value');
       if (el) el.textContent = faNum(count);
-    }).catch(() => {
+    }).catch((e) => {
+      console.error('loadTotalUsers error:', e);
       const el = document.querySelector('#statGrid .stat-card:nth-child(1) .stat-value');
       if (el) el.textContent = '—';
     });
@@ -565,7 +578,7 @@
       const el = document.getElementById('statOpenTickets');
       if (el) el.textContent = faNum(count);
       updateSupportBadge(count);
-    }).catch(() => {});
+    }).catch((e) => { console.error('loadOpenTicketsCount error:', e); });
 
     // Presence per language, live
     detachPresenceListeners();
@@ -653,7 +666,8 @@
         state.tickets = Object.keys(val).map(id => ({ id, ...val[id] })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
         state.ticketsLoaded = true;
       } catch(e) {
-        toast('خطا در بارگذاری تیکت‌ها', 'err');
+        console.error('loadTickets error:', e);
+        toast('خطا در بارگذاری تیکت‌ها: ' + (e && e.message ? e.message : 'نامشخص'), 'err');
         state.tickets = [];
       }
     }
@@ -780,7 +794,8 @@
           .sort((a,b) => (b.xp||0) - (a.xp||0));
         state.usersLoaded = true;
       } catch(e) {
-        toast('خطا در بارگذاری کاربران', 'err');
+        console.error('loadUsers error:', e);
+        toast('خطا در بارگذاری کاربران: ' + (e && e.message ? e.message : 'نامشخص'), 'err');
         state.users = [];
       }
     }
@@ -1044,8 +1059,8 @@
       state.contentWords = applyOverrides(Array.isArray(base) ? base : [], overrides);
       paintWordList();
     } catch(e) {
-      console.error(e);
-      toast('خطا در بارگذاری کلمات', 'err');
+      console.error('loadContentWords error:', e);
+      toast('خطا در بارگذاری کلمات: ' + (e && e.message ? e.message : 'نامشخص'), 'err');
       const wrap2 = document.getElementById('wordListWrap');
       if (wrap2) wrap2.innerHTML = `<div class="empty-state">${icon('content',46)}<p>خطا در بارگذاری فایل کلمات.</p></div>`;
     }
