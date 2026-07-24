@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>پنل مدیریت · جعبه لایتنر</title>
+<link rel="icon" href="icon-hero.png">
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
@@ -54,6 +55,7 @@
   }
   .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .auth-brand .box-icon { width: 34px; height: 34px; flex-shrink: 0; }
+  .box-icon.img-logo { border-radius: 8px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
   .auth-brand h1 { font-size: 17px; margin: 0; font-weight: 700; }
   .auth-sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 24px; line-height: 1.7; }
   .field { margin-bottom: 14px; }
@@ -295,7 +297,7 @@
 <div id="authGate">
   <div class="auth-card">
     <div class="auth-brand">
-      <svg class="box-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="28" rx="3" stroke="#c9a66b" stroke-width="2.5"/><path d="M4 14 L24 4 L44 14" stroke="#c9a66b" stroke-width="2.5" stroke-linejoin="round"/><line x1="16" y1="22" x2="16" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="24" y1="22" x2="24" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="32" y1="22" x2="32" y2="34" stroke="#c9a66b" stroke-width="2"/></svg>
+      <img class="box-icon img-logo" src="icon-hero.png" alt="">
       <h1>پنل مدیریت جعبه لایتنر</h1>
     </div>
     <p class="auth-sub">فقط حساب‌های مدیر مجاز به ورود هستند.</p>
@@ -317,7 +319,7 @@
 <div id="app">
   <aside class="sidebar">
     <div class="side-brand">
-      <svg class="box-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="28" rx="3" stroke="#c9a66b" stroke-width="2.5"/><path d="M4 14 L24 4 L44 14" stroke="#c9a66b" stroke-width="2.5" stroke-linejoin="round"/><line x1="16" y1="22" x2="16" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="24" y1="22" x2="24" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="32" y1="22" x2="32" y2="34" stroke="#c9a66b" stroke-width="2"/></svg>
+      <img class="box-icon img-logo" src="icon-hero.png" alt="">
       <span>جعبه لایتنر<small>پنل مدیریت</small></span>
     </div>
     <div id="drawerTabs"></div>
@@ -407,6 +409,8 @@
     ban: '<circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/>',
     check: '<path d="M20 6L9 17l-5-5"/>',
     reply: '<path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>',
   };
   function icon(name, size){
     size = size || 16;
@@ -424,6 +428,8 @@
     bans: {}, permissions: {},
     contentLang: 'de', contentLevel: 'A1', contentWords: [], contentLoading: false, contentSearch: '',
     contentOverrides: null,
+    appStatus: { closed: false, message: '' }, appStatusLoaded: false,
+    broadcasts: [], broadcastsLoaded: false,
   };
 
   // ===================== Auth =====================
@@ -496,6 +502,7 @@
     { id: 'support', label: 'تیکت‌های پشتیبانی', icon: 'support', badgeKey: 'openTickets' },
     { id: 'users', label: 'مدیریت کاربران', icon: 'users' },
     { id: 'content', label: 'مدیریت محتوا', icon: 'content' },
+    { id: 'broadcast', label: 'اطلاع‌رسانی و وضعیت برنامه', icon: 'bell' },
   ];
 
   function initShell(){
@@ -522,6 +529,7 @@
     else if (view === 'support') renderSupport();
     else if (view === 'users') renderUsers();
     else if (view === 'content') renderContent();
+    else if (view === 'broadcast') renderBroadcast();
   }
 
   // ===================== Dashboard =====================
@@ -786,8 +794,14 @@
         const usersVal = usersSnap.val() || {};
         state.bans = bansSnap.val() || {};
         state.permissions = {};
+        state.userIdMaxChangesCache = {};
         const permsVal = permsSnap.val() || {};
-        Object.keys(permsVal).forEach(uid => { state.permissions[uid] = !!(permsVal[uid] && permsVal[uid].canCreateGroups); });
+        Object.keys(permsVal).forEach(uid => {
+          state.permissions[uid] = !!(permsVal[uid] && permsVal[uid].canCreateGroups);
+          if (permsVal[uid] && typeof permsVal[uid].userIdMaxChanges === 'number') {
+            state.userIdMaxChangesCache[uid] = permsVal[uid].userIdMaxChanges;
+          }
+        });
         state.userXpBonusCache = {};
         Object.keys(usersVal).forEach(uid => { state.userXpBonusCache[uid] = usersVal[uid].adminXpBonus || 0; });
         state.users = Object.keys(leaderVal).map(uid => ({ uid, ...leaderVal[uid] }))
@@ -855,11 +869,15 @@
     `;
   }
 
+  const DEFAULT_USER_ID_MAX_CHANGES = 2; // مقدار پیش‌فرض توی خود اپ، اگه برای کاربر خاصی چیزی تنظیم نشه
+
   function openEditUserModal(uid){
     const u = state.users.find(x => x.uid === uid);
     if (!u) return;
     const bonus = (state.userXpBonusCache && state.userXpBonusCache[uid]) || 0;
     const canGroup = !!state.permissions[uid];
+    const maxIdChanges = (state.userIdMaxChangesCache && typeof state.userIdMaxChangesCache[uid] === 'number')
+      ? state.userIdMaxChangesCache[uid] : DEFAULT_USER_ID_MAX_CHANGES;
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
     backdrop.innerHTML = `
@@ -873,6 +891,10 @@
         <div class="mfield-group">
           <label class="mlabel">امتیاز جایزه (به XP واقعی کاربر اضافه می‌شود)</label>
           <input class="mfield" id="editXpBonus" type="number" value="${bonus}">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">تعداد دفعات مجاز تغییر آیدی (پیش‌فرض اپ: ${faNum(DEFAULT_USER_ID_MAX_CHANGES)})</label>
+          <input class="mfield" id="editIdMaxChanges" type="number" min="0" value="${maxIdChanges}">
         </div>
         <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
           <span style="font-size:13px">مجوز ساخت گروه</span>
@@ -900,16 +922,21 @@
       const newName = backdrop.querySelector('#editName').value.trim();
       const newBonus = parseInt(backdrop.querySelector('#editXpBonus').value, 10) || 0;
       const newCanGroup = checkbox.checked;
+      let newMaxIdChanges = parseInt(backdrop.querySelector('#editIdMaxChanges').value, 10);
+      if (isNaN(newMaxIdChanges) || newMaxIdChanges < 0) newMaxIdChanges = DEFAULT_USER_ID_MAX_CHANGES;
       try {
         await Promise.all([
           fbDb.ref('leaderboard/' + uid).update({ name: newName || u.name || 'کاربر' }),
           fbDb.ref('users/' + uid + '/adminXpBonus').set(newBonus),
           fbDb.ref('permissions/' + uid + '/canCreateGroups').set(newCanGroup),
+          fbDb.ref('permissions/' + uid + '/userIdMaxChanges').set(newMaxIdChanges),
         ]);
         u.name = newName || u.name;
         if (!state.userXpBonusCache) state.userXpBonusCache = {};
         state.userXpBonusCache[uid] = newBonus;
         state.permissions[uid] = newCanGroup;
+        if (!state.userIdMaxChangesCache) state.userIdMaxChangesCache = {};
+        state.userIdMaxChangesCache[uid] = newMaxIdChanges;
         toast('تغییرات ذخیره شد', 'ok');
         backdrop.remove();
         paintUserTable();
@@ -990,7 +1017,7 @@
     }
   }
 
-  window.__admin = { navigate, openReplyModal, setTicketStatus, openEditUserModal, openBanModal, openWordModal, deleteWord };
+  window.__admin = { navigate, openReplyModal, setTicketStatus, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast };
 
   // ===================== Content management =====================
   async function renderContent(){
@@ -1200,6 +1227,180 @@
       state.contentWords = [];
       loadContentWords();
     } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // ===================== اطلاع‌رسانی همگانی + وضعیت برنامه (بستن/بروزرسانی) =====================
+  const DEFAULT_MAINTENANCE_MSG = 'برنامه در حال بروزرسانی هست';
+
+  async function renderBroadcast(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>اطلاع‌رسانی و وضعیت برنامه</h2>
+        <p>ارسال پیام به همه‌ی کاربران، و بستن موقت برنامه برای بروزرسانی</p>
+      </div>
+
+      <div class="card" style="margin-bottom:22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${icon('power',15)} وضعیت برنامه</div>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">اگه برنامه رو ببندی، همه‌ی کاربرها (حتی قبل از ورود) فقط همین پیام رو می‌بینن و به بقیه‌ی اپ دسترسی ندارن.</p>
+        <div id="appStatusWrap"><span class="loading-spin"></span></div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${icon('bell',15)} ارسال نوتیفیکیشن به همه‌ی کاربران</div>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">متن دلخواه رو بنویس؛ می‌تونی همین الان بفرستی یا برای چند ساعت دیگه زمان‌بندی کنی.</p>
+        <div class="mfield-group">
+          <label class="mlabel">متن نوتیفیکیشن</label>
+          <textarea class="ta" id="bcMessage" placeholder="پیامت رو اینجا بنویس..."></textarea>
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">زمان ارسال</label>
+          <select class="mfield" id="bcDelay">
+            <option value="0">همین الان</option>
+            <option value="0.5">نیم ساعت دیگه</option>
+            <option value="1">۱ ساعت دیگه</option>
+            <option value="2">۲ ساعت دیگه</option>
+            <option value="6">۶ ساعت دیگه</option>
+            <option value="24">۲۴ ساعت دیگه</option>
+            <option value="custom">دلخواه (ساعت)</option>
+          </select>
+        </div>
+        <div class="mfield-group" id="bcCustomWrap" style="display:none">
+          <label class="mlabel">چند ساعت دیگه ارسال شود؟</label>
+          <input class="mfield" id="bcCustomHours" type="number" min="0" step="0.5" value="2">
+        </div>
+        <button class="btn-confirm" style="width:auto;padding:10px 20px" id="bcSendBtn">${icon('bell',14)} ارسال</button>
+      </div>
+
+      <div class="card" style="padding:20px 22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:14px">نوتیفیکیشن‌های اخیر</div>
+        <div id="broadcastListWrap"><span class="loading-spin"></span></div>
+      </div>
+    `;
+
+    document.getElementById('bcDelay').addEventListener('change', (e) => {
+      document.getElementById('bcCustomWrap').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+    document.getElementById('bcSendBtn').addEventListener('click', sendBroadcast);
+
+    await loadAppStatus();
+    paintAppStatus();
+    await loadBroadcasts();
+    paintBroadcastList();
+  }
+
+  async function loadAppStatus(){
+    try {
+      const snap = await fbDb.ref('appStatus').once('value');
+      const val = snap.val() || {};
+      state.appStatus = { closed: !!val.closed, message: val.message || DEFAULT_MAINTENANCE_MSG };
+      state.appStatusLoaded = true;
+    } catch(e) {
+      console.error('loadAppStatus error:', e);
+      state.appStatus = { closed: false, message: DEFAULT_MAINTENANCE_MSG };
+    }
+  }
+
+  function paintAppStatus(){
+    const wrap = document.getElementById('appStatusWrap');
+    if (!wrap) return;
+    const closed = state.appStatus.closed;
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px;margin-bottom:14px">
+        <span style="font-size:13px">${closed ? 'برنامه الان بسته است' : 'برنامه الان باز و در دسترس است'}</span>
+        <span class="pill ${closed ? 'banned' : 'active'}">${closed ? icon('ban',11) + ' بسته' : icon('check',11) + ' باز'}</span>
+      </div>
+      <div class="mfield-group">
+        <label class="mlabel">پیامی که به کاربران نمایش داده می‌شود</label>
+        <textarea class="ta" id="appStatusMsg" style="min-height:70px">${esc(state.appStatus.message || DEFAULT_MAINTENANCE_MSG)}</textarea>
+      </div>
+      <div style="display:flex;gap:10px">
+        ${closed
+          ? `<button class="btn-confirm" id="appStatusToggleBtn" style="flex:1">${icon('power',14)} باز کردن برنامه</button>`
+          : `<button class="btn-danger" id="appStatusToggleBtn" style="flex:1">${icon('power',14)} بستن برنامه</button>`}
+      </div>
+    `;
+    document.getElementById('appStatusToggleBtn').addEventListener('click', () => saveAppStatus(!closed));
+  }
+
+  async function saveAppStatus(closed){
+    const msgEl = document.getElementById('appStatusMsg');
+    const message = (msgEl ? msgEl.value.trim() : state.appStatus.message) || DEFAULT_MAINTENANCE_MSG;
+    if (closed && !confirm('مطمئنی می‌خوای برنامه رو برای همه‌ی کاربران ببندی؟')) return;
+    try {
+      await fbDb.ref('appStatus').set({ closed: !!closed, message, updatedAt: Date.now() });
+      state.appStatus = { closed: !!closed, message };
+      toast(closed ? 'برنامه بسته شد' : 'برنامه باز شد', 'ok');
+      paintAppStatus();
+    } catch(e) { toast('خطا در ذخیره‌سازی وضعیت برنامه', 'err'); }
+  }
+
+  async function loadBroadcasts(){
+    try {
+      const snap = await fbDb.ref('broadcastNotifications').orderByChild('createdAt').limitToLast(50).once('value');
+      const val = snap.val() || {};
+      state.broadcasts = Object.keys(val).map(id => ({ id, ...val[id] })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+      state.broadcastsLoaded = true;
+    } catch(e) {
+      console.error('loadBroadcasts error:', e);
+      state.broadcasts = [];
+    }
+  }
+
+  function paintBroadcastList(){
+    const wrap = document.getElementById('broadcastListWrap');
+    if (!wrap) return;
+    if (state.broadcasts.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">${icon('bell', 46)}<p>هنوز نوتیفیکیشنی ارسال نشده.</p></div>`;
+      return;
+    }
+    const now = Date.now();
+    wrap.innerHTML = state.broadcasts.map(b => {
+      const pending = (b.sendAt || 0) > now;
+      return `
+        <div class="index-card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px">
+            <span class="mono" style="font-size:11px;color:var(--placeholder)">${fmtDate(b.createdAt)}</span>
+            <span class="pill ${pending ? 'open' : 'answered'}">${pending ? 'زمان‌بندی‌شده · ' + fmtDate(b.sendAt) : 'ارسال شده'}</span>
+          </div>
+          <div style="font-size:13px;line-height:1.8">${esc(b.message || '')}</div>
+          ${pending ? `<div style="margin-top:10px"><button class="btn-small" onclick="__admin.cancelBroadcast('${esc(b.id)}')">${icon('trash',12)} لغو ارسال</button></div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function sendBroadcast(){
+    const msgEl = document.getElementById('bcMessage');
+    const message = msgEl ? msgEl.value.trim() : '';
+    if (!message) { toast('متن نوتیفیکیشن نمی‌تونه خالی باشه', 'err'); return; }
+    const delaySel = document.getElementById('bcDelay').value;
+    let delayHours = 0;
+    if (delaySel === 'custom') {
+      delayHours = parseFloat(document.getElementById('bcCustomHours').value) || 0;
+    } else {
+      delayHours = parseFloat(delaySel) || 0;
+    }
+    const now = Date.now();
+    const sendAt = now + Math.max(0, delayHours) * 3600000;
+    try {
+      const ref = fbDb.ref('broadcastNotifications').push();
+      await ref.set({ message, createdAt: now, sendAt, createdBy: state.email || state.uid || null });
+      toast(delayHours > 0 ? 'نوتیفیکیشن زمان‌بندی شد' : 'نوتیفیکیشن ارسال شد', 'ok');
+      msgEl.value = '';
+      await loadBroadcasts();
+      paintBroadcastList();
+    } catch(e) { toast('خطا در ارسال نوتیفیکیشن', 'err'); }
+  }
+
+  async function cancelBroadcast(id){
+    if (!confirm('این نوتیفیکیشن زمان‌بندی‌شده لغو شود؟')) return;
+    try {
+      await fbDb.ref('broadcastNotifications/' + id).remove();
+      state.broadcasts = state.broadcasts.filter(b => b.id !== id);
+      toast('لغو شد', 'ok');
+      paintBroadcastList();
+    } catch(e) { toast('خطا در لغو', 'err'); }
   }
 })();
 </script>
