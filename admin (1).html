@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل مدیریت · جعبه لایتنر</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #14161f; --bg-radial: #1c2033; --panel: #1e2230; --panel2: #262b3d; --panel3: #2c3145;
+    --ivory: #ede6d6; --text: #ede6d6; --muted: #9aa0b4; --placeholder: #6b7189;
+    --brass: #c9a66b; --brass-dark: #a9824f; --brass-glow: rgba(201,166,107,0.16);
+    --wine: #b65c5c; --wine-glow: rgba(182,92,92,0.16);
+    --sage: #8fa37a; --sage-strong: #4fb86a; --sage-glow: rgba(79,184,106,0.16);
+    --teal: #3fc1c9; --teal-dark: #2b969d; --teal-glow: rgba(63,193,201,0.14);
+    --violet: #8B6FC9;
+    --border: #333854; --border2: #3c4260; --divider: #292d40;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, var(--bg-radial) 0%, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(139,111,201,0.08) 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  ::selection { background: var(--brass-glow); color: var(--brass); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; }
+
+  /* ---------- Auth gate ---------- */
+  #authGate {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .auth-card {
+    width: 100%; max-width: 380px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 18px; padding: 32px 28px;
+    box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .auth-card::before {
+    content: ''; position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 6px;
+    background: repeating-linear-gradient(180deg, var(--brass) 0 14px, transparent 14px 22px);
+    opacity: 0.55;
+  }
+  .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .auth-brand .box-icon { width: 34px; height: 34px; flex-shrink: 0; }
+  .auth-brand h1 { font-size: 17px; margin: 0; font-weight: 700; }
+  .auth-sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 24px; line-height: 1.7; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+    border-radius: 10px; padding: 11px 13px; font-size: 14px; outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--brass); }
+  .btn-primary {
+    width: 100%; background: var(--brass); color: #1a1710; border: none; border-radius: 10px;
+    padding: 12px; font-size: 14px; font-weight: 700; margin-top: 6px; transition: filter 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-error {
+    background: var(--wine-glow); border: 1px solid rgba(182,92,92,0.35); color: #e0a3a3;
+    border-radius: 8px; padding: 9px 11px; font-size: 12.5px; margin-bottom: 14px; display: none; line-height: 1.6;
+  }
+
+  /* ---------- App shell ---------- */
+  #app { display: none; min-height: 100vh; }
+  #app.show { display: flex; }
+
+  .sidebar {
+    width: 236px; flex-shrink: 0; background: var(--panel); border-inline-end: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 18px 14px; gap: 4px; position: sticky; top: 0; height: 100vh;
+  }
+  .side-brand { display: flex; align-items: center; gap: 9px; padding: 6px 8px 18px; }
+  .side-brand .box-icon { width: 26px; height: 26px; flex-shrink: 0; }
+  .side-brand span { font-size: 14.5px; font-weight: 700; }
+  .side-brand small { display: block; color: var(--muted); font-size: 10.5px; font-weight: 400; margin-top: 1px; }
+
+  .drawer-tab {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    color: var(--muted); font-size: 13.5px; font-weight: 500; position: relative;
+    border: 1px solid transparent; transition: background 0.15s, color 0.15s;
+  }
+  .drawer-tab:hover { background: var(--panel2); color: var(--text); }
+  .drawer-tab.active { background: var(--panel2); color: var(--brass); border-color: var(--border2); }
+  .drawer-tab.active::before {
+    content: ''; position: absolute; inset-inline-start: -14px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 18px; background: var(--brass); border-radius: 3px;
+  }
+  .drawer-tab .dtab-icon { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.9; }
+  .drawer-tab .badge-count {
+    margin-inline-start: auto; background: var(--wine); color: #fff; font-size: 10.5px; font-weight: 700;
+    border-radius: 20px; padding: 1px 7px; font-family: 'JetBrains Mono', monospace;
+  }
+  .sidebar-foot { margin-top: auto; padding: 10px 8px 4px; border-top: 1px solid var(--divider); }
+  .sidebar-foot .who { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-ghost {
+    width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--muted);
+    border-radius: 9px; padding: 8px; font-size: 12.5px; transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--wine); color: #e0a3a3; }
+
+  .main { flex: 1; min-width: 0; padding: 28px 32px 60px; max-width: 1180px; }
+  .page-head { margin-bottom: 24px; }
+  .page-head h2 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .page-head p { color: var(--muted); font-size: 12.5px; margin: 0; }
+
+  /* ---------- Cards / index-card motif ---------- */
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+  }
+  .index-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+    position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .index-card::before {
+    content: ''; position: absolute; inset-inline-start: 22px; top: 0; width: 34px; height: 8px;
+    background: var(--panel3); border: 1px solid var(--border2); border-top: none;
+    border-radius: 0 0 5px 5px; opacity: 0.7;
+  }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .stat-card .stat-label { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .stat-card .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 600; }
+  .stat-card .stat-value.brass { color: var(--brass); }
+  .stat-card .stat-value.sage { color: var(--sage-strong); }
+  .stat-card .stat-value.teal { color: var(--teal); }
+  .stat-card .stat-value.wine { color: var(--wine); }
+  .stat-card .stat-sub { font-size: 11px; color: var(--placeholder); margin-top: 4px; }
+
+  .lesson-row {
+    display: flex; align-items: center; gap: 14px; padding: 13px 16px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;
+  }
+  .lesson-flag { font-size: 22px; }
+  .lesson-name { font-weight: 600; font-size: 14px; flex-shrink: 0; width: 100px; }
+  .presence-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sage-strong); box-shadow: 0 0 0 3px var(--sage-glow); }
+  .lesson-stats { display: flex; gap: 18px; margin-inline-start: auto; }
+  .lesson-stats .ls { text-align: center; }
+  .lesson-stats .ls .n { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; }
+  .lesson-stats .ls .l { font-size: 10px; color: var(--muted); }
+  .btn-small {
+    background: var(--panel2); border: 1px solid var(--border2); color: var(--text); border-radius: 8px;
+    padding: 7px 13px; font-size: 12px; font-weight: 500; transition: border-color 0.15s;
+  }
+  .btn-small:hover { border-color: var(--brass); }
+
+  .online-user-chip {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--panel2); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 5px 11px 5px 8px; font-size: 12px; margin: 3px;
+  }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table th {
+    text-align: right; color: var(--muted); font-weight: 500; font-size: 11.5px; padding: 8px 12px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  table.data-table td { padding: 10px 12px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .pill.open { background: var(--wine-glow); color: #e0a3a3; }
+  .pill.answered { background: var(--sage-glow); color: var(--sage-strong); }
+  .pill.closed { background: rgba(154,160,180,0.14); color: var(--muted); }
+  .pill.banned { background: var(--wine-glow); color: #e0a3a3; }
+  .pill.active { background: var(--sage-glow); color: var(--sage-strong); }
+
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-input {
+    background: var(--panel); border: 1px solid var(--border2); color: var(--text); border-radius: 10px;
+    padding: 9px 14px; font-size: 13px; min-width: 220px; outline: none;
+  }
+  .search-input:focus { border-color: var(--brass); }
+  select.filter-select {
+    background: var(--panel); border: 1px solid var(--border2); color: var(--text); border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; outline: none;
+  }
+
+  .icon-btn {
+    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; color: var(--muted);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--brass); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(10,11,17,0.65); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+  }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--border2); border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; box-shadow: var(--shadow);
+  }
+  .modal-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .modal-card .modal-sub { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-secondary {
+    flex: 1; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+    border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 600;
+  }
+  .btn-danger {
+    flex: 1; background: var(--wine); border: none; color: #fff; border-radius: 10px; padding: 10px;
+    font-size: 13px; font-weight: 700;
+  }
+  .btn-confirm {
+    flex: 1; background: var(--sage-strong); border: none; color: #0e1a10; border-radius: 10px; padding: 10px;
+    font-size: 13px; font-weight: 700;
+  }
+  textarea.ta {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+    border-radius: 10px; padding: 11px 13px; font-size: 13.5px; outline: none; resize: vertical; min-height: 90px;
+    line-height: 1.7; font-family: inherit;
+  }
+  textarea.ta:focus, input.mfield:focus { border-color: var(--brass); }
+  input.mfield {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+    border-radius: 10px; padding: 10px 12px; font-size: 13.5px; outline: none;
+  }
+  .mfield-row { display: flex; gap: 10px; }
+  .mfield-row > div { flex: 1; }
+  .mlabel { font-size: 11.5px; color: var(--muted); margin-bottom: 5px; display: block; }
+  .mfield-group { margin-bottom: 13px; }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state svg { width: 46px; height: 46px; opacity: 0.35; margin-bottom: 14px; }
+  .empty-state p { font-size: 13px; margin: 0; }
+
+  .loading-spin {
+    display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--brass); border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 400; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast {
+    background: var(--panel3); border: 1px solid var(--border2); color: var(--text); padding: 10px 18px;
+    border-radius: 30px; font-size: 12.5px; box-shadow: var(--shadow); animation: toastIn 0.2s ease;
+  }
+  .toast.ok { border-color: rgba(79,184,106,0.4); }
+  .toast.err { border-color: rgba(182,92,92,0.4); }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+
+  .tab-strip { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--divider); }
+  .tab-strip button {
+    background: none; border: none; color: var(--muted); font-size: 13px; padding: 9px 4px; margin-inline-end: 18px;
+    border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  .tab-strip button.active { color: var(--brass); border-color: var(--brass); }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+  @media (max-width: 860px) {
+    #app.show { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 10px 12px; }
+    .side-brand, .sidebar-foot { display: none; }
+    .drawer-tab { flex-shrink: 0; }
+    .main { padding: 18px 16px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg class="box-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="28" rx="3" stroke="#c9a66b" stroke-width="2.5"/><path d="M4 14 L24 4 L44 14" stroke="#c9a66b" stroke-width="2.5" stroke-linejoin="round"/><line x1="16" y1="22" x2="16" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="24" y1="22" x2="24" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="32" y1="22" x2="32" y2="34" stroke="#c9a66b" stroke-width="2"/></svg>
+      <h1>پنل مدیریت جعبه لایتنر</h1>
+    </div>
+    <p class="auth-sub">فقط حساب‌های مدیر مجاز به ورود هستند.</p>
+    <div class="auth-error" id="authErrorBox"></div>
+    <form id="authForm">
+      <div class="field">
+        <label>ایمیل مدیر</label>
+        <input type="email" id="authEmail" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label>رمز عبور</label>
+        <input type="password" id="authPassword" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="authSubmitBtn">ورود</button>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="side-brand">
+      <svg class="box-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="28" rx="3" stroke="#c9a66b" stroke-width="2.5"/><path d="M4 14 L24 4 L44 14" stroke="#c9a66b" stroke-width="2.5" stroke-linejoin="round"/><line x1="16" y1="22" x2="16" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="24" y1="22" x2="24" y2="34" stroke="#c9a66b" stroke-width="2"/><line x1="32" y1="22" x2="32" y2="34" stroke="#c9a66b" stroke-width="2"/></svg>
+      <span>جعبه لایتنر<small>پنل مدیریت</small></span>
+    </div>
+    <div id="drawerTabs"></div>
+    <div class="sidebar-foot">
+      <div class="who mono" id="whoBox">—</div>
+      <button class="btn-ghost" id="signOutBtn">خروج از حساب</button>
+    </div>
+  </aside>
+  <main class="main" id="mainArea"></main>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ===================== Firebase =====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyD0k5N85VibSQxsJVnYFYQoj7XTqZ8iDUU",
+    authDomain: "leitner-box-644ca.firebaseapp.com",
+    databaseURL: "https://leitner-box-644ca-default-rtdb.firebaseio.com/",
+    projectId: "leitner-box-644ca",
+    storageBucket: "leitner-box-644ca.firebasestorage.app",
+    messagingSenderId: "519437943500",
+    appId: "1:519437943500:web:fead3324dd442c15f4b869",
+    measurementId: "G-4FGM5V738N"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const fbAuth = firebase.auth();
+  const fbDb = firebase.database();
+
+  // ===================== Admin allow-list =====================
+  // فقط UIDهای زیر اجازه‌ی ورود به پنل مدیریت رو دارن. بعد از ساختن حساب مدیر با ایمیل/رمز از
+  // همین فایربیس، UID اون حساب رو (از تب Authentication در کنسول فایربیس) اینجا اضافه کن.
+  const ADMIN_UIDS = [
+    "K0aQSr1206SpUJpRX38rDFbI89s2",
+    "QT4asHyr5wfpl6EbuDXMoqBz39v2",
+  ];
+  const ADMIN_ALLOWLIST_DISABLED = ADMIN_UIDS.length === 0; // تا وقتی پر نشده، هر حساب معتبر رو موقتاً می‌پذیریم
+
+  const LANGUAGE_META = {
+    de: { native: 'Deutsch', flag: '🇩🇪' },
+    en: { native: 'English', flag: '🇬🇧' },
+    es: { native: 'Español', flag: '🇪🇸' },
+    it: { native: 'Italiano', flag: '🇮🇹' },
+    fr: { native: 'Français', flag: '🇫🇷' },
+  };
+  const LANGUAGE_CODES = ['de','en','es','it','fr'];
+  const CURRICULUM_LEVELS = ['A1','A2','B1'];
+  const CURRICULUM_FILES = { A1: 'words_a1.json', A2: 'words_a2.json', B1: 'words_b1.json' };
+
+  function faNum(n){
+    const map = {'0':'۰','1':'۱','2':'۲','3':'۳','4':'۴','5':'۵','6':'۶','7':'۷','8':'۸','9':'۹'};
+    return String(n).replace(/[0-9]/g, d => map[d]);
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function fmtDate(ts){
+    if (!ts) return '—';
+    try { return new Date(ts).toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' }); } catch(e){ return '—'; }
+  }
+  function toast(msg, type){
+    const wrap = document.getElementById('toastWrap');
+    const el = document.createElement('div');
+    el.className = 'toast ' + (type || '');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 2600);
+  }
+  function computeLevelInfo(totalXp){
+    function need(level){ return 20 + (level - 1) * 8; }
+    let level = 1, remaining = Math.max(0, totalXp || 0);
+    while (remaining >= need(level)){ remaining -= need(level); level++; }
+    return { level, xpIntoLevel: remaining, xpForNext: need(level) };
+  }
+
+  const ICONS = {
+    dashboard: '<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',
+    support: '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z"/>',
+    users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    content: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    ban: '<circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/>',
+    check: '<path d="M20 6L9 17l-5-5"/>',
+    reply: '<path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/>',
+  };
+  function icon(name, size){
+    size = size || 16;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">${ICONS[name] || ''}</svg>`;
+  }
+
+  // ===================== State =====================
+  const state = {
+    view: 'dashboard',
+    uid: null,
+    email: null,
+    dashboard: { totalUsers: null, presence: {}, presenceUsers: {} },
+    tickets: [], ticketsLoaded: false, ticketFilter: 'all',
+    users: [], usersLoaded: false, userSearch: '',
+    bans: {}, permissions: {},
+    contentLang: 'de', contentLevel: 'A1', contentWords: [], contentLoading: false, contentSearch: '',
+    contentOverrides: null,
+  };
+
+  // ===================== Auth =====================
+  const authForm = document.getElementById('authForm');
+  const authErrorBox = document.getElementById('authErrorBox');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+  function authErrorFa(code){
+    switch (code) {
+      case 'auth/invalid-email': return 'فرمت ایمیل درست نیست.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential': return 'ایمیل یا رمز عبور اشتباهه.';
+      case 'auth/too-many-requests': return 'تعداد تلاش‌ها زیاد بوده؛ کمی صبر کن.';
+      case 'auth/network-request-failed': return 'اتصال اینترنت برقرار نیست.';
+      default: return 'ورود ناموفق بود. دوباره امتحان کن.';
+    }
+  }
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authErrorBox.style.display = 'none';
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.innerHTML = '<span class="loading-spin"></span>';
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPassword').value;
+    try {
+      await fbAuth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      authErrorBox.textContent = authErrorFa(err.code);
+      authErrorBox.style.display = 'block';
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = 'ورود';
+    }
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', () => {
+    fbAuth.signOut();
+  });
+
+  fbAuth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('app').classList.remove('show');
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = 'ورود';
+      return;
+    }
+    const allowed = ADMIN_ALLOWLIST_DISABLED || ADMIN_UIDS.includes(user.uid);
+    if (!allowed) {
+      authErrorBox.innerHTML = 'این حساب مجوز دسترسی به پنل مدیریت را ندارد.<br><span class="mono" style="opacity:.7">UID: ' + esc(user.uid) + '</span>';
+      authErrorBox.style.display = 'block';
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = 'ورود';
+      await fbAuth.signOut();
+      return;
+    }
+    state.uid = user.uid;
+    state.email = user.email;
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    document.getElementById('whoBox').textContent = user.email || user.uid;
+    initShell();
+    navigate('dashboard');
+  });
+
+  // ===================== Shell / router =====================
+  const DRAWERS = [
+    { id: 'dashboard', label: 'آمار و مانیتورینگ', icon: 'dashboard' },
+    { id: 'support', label: 'تیکت‌های پشتیبانی', icon: 'support', badgeKey: 'openTickets' },
+    { id: 'users', label: 'مدیریت کاربران', icon: 'users' },
+    { id: 'content', label: 'مدیریت محتوا', icon: 'content' },
+  ];
+
+  function initShell(){
+    const tabsEl = document.getElementById('drawerTabs');
+    tabsEl.innerHTML = DRAWERS.map(d => `
+      <button class="drawer-tab" data-view="${d.id}" onclick="__admin.navigate('${d.id}')">
+        <span class="dtab-icon">${icon(d.icon, 17)}</span>
+        <span>${d.label}</span>
+        ${d.badgeKey ? `<span class="badge-count" id="badge-${d.id}" style="display:none"></span>` : ''}
+      </button>
+    `).join('');
+  }
+
+  function setActiveTab(view){
+    document.querySelectorAll('.drawer-tab').forEach(t => {
+      t.classList.toggle('active', t.getAttribute('data-view') === view);
+    });
+  }
+
+  function navigate(view){
+    state.view = view;
+    setActiveTab(view);
+    if (view === 'dashboard') renderDashboard();
+    else if (view === 'support') renderSupport();
+    else if (view === 'users') renderUsers();
+    else if (view === 'content') renderContent();
+  }
+
+  // ===================== Dashboard =====================
+  let presenceListeners = [];
+  function detachPresenceListeners(){
+    presenceListeners.forEach(ref => ref.off());
+    presenceListeners = [];
+  }
+
+  async function renderDashboard(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>آمار و مانیتورینگ</h2>
+        <p>نمای کلی از کاربران، فعالیت آنلاین و درس‌ها</p>
+      </div>
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card">
+          <div class="stat-label">${icon('users',13)} کل کاربران ثبت‌نامی</div>
+          <div class="stat-value brass"><span class="loading-spin"></span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${icon('dashboard',13)} کاربران آنلاین (همه درس‌ها)</div>
+          <div class="stat-value sage" id="statOnlineTotal">۰</div>
+          <div class="stat-sub">به‌صورت لحظه‌ای</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${icon('support',13)} تیکت‌های باز</div>
+          <div class="stat-value wine" id="statOpenTickets"><span class="loading-spin"></span></div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px 22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:14px">کاربران آنلاین به تفکیک درس (زبان)</div>
+        <div id="lessonList"></div>
+      </div>
+    `;
+
+    // Total registered users — count of usernames/ (each unique username = one signed-up user)
+    fbDb.ref('usernames').once('value').then(snap => {
+      const val = snap.val() || {};
+      const count = Object.keys(val).length;
+      const el = document.querySelector('#statGrid .stat-card:nth-child(1) .stat-value');
+      if (el) el.textContent = faNum(count);
+    }).catch(() => {
+      const el = document.querySelector('#statGrid .stat-card:nth-child(1) .stat-value');
+      if (el) el.textContent = '—';
+    });
+
+    // Open tickets count
+    fbDb.ref('supportTickets').orderByChild('status').equalTo('open').once('value').then(snap => {
+      const val = snap.val() || {};
+      const count = Object.keys(val).length;
+      const el = document.getElementById('statOpenTickets');
+      if (el) el.textContent = faNum(count);
+      updateSupportBadge(count);
+    }).catch(() => {});
+
+    // Presence per language, live
+    detachPresenceListeners();
+    const lessonListEl = document.getElementById('lessonList');
+    lessonListEl.innerHTML = LANGUAGE_CODES.map(code => renderLessonRow(code, {})).join('');
+
+    let totalOnline = 0;
+    const perLangUsers = {};
+    LANGUAGE_CODES.forEach(code => {
+      const ref = fbDb.ref('presence/' + code);
+      presenceListeners.push(ref);
+      ref.on('value', (snap) => {
+        const val = snap.val() || {};
+        perLangUsers[code] = val;
+        totalOnline = Object.values(perLangUsers).reduce((sum, u) => sum + Object.keys(u || {}).length, 0);
+        const totalEl = document.getElementById('statOnlineTotal');
+        if (totalEl) totalEl.textContent = faNum(totalOnline);
+        const rowEl = document.getElementById('lessonRow-' + code);
+        if (rowEl) rowEl.outerHTML = renderLessonRow(code, val);
+      });
+    });
+  }
+
+  function renderLessonRow(code, onlineUsers){
+    const meta = LANGUAGE_META[code] || { native: code, flag: '🏳️' };
+    const count = Object.keys(onlineUsers || {}).length;
+    const usersHtml = count > 0
+      ? Object.entries(onlineUsers).map(([uid, u]) => `<span class="online-user-chip"><span class="presence-dot"></span>${esc(u.name || u.userId || 'کاربر')}</span>`).join('')
+      : `<span style="color:var(--placeholder);font-size:12px">کسی آنلاین نیست</span>`;
+    return `
+      <div class="lesson-row" id="lessonRow-${code}" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span class="lesson-flag">${meta.flag}</span>
+          <span class="lesson-name">${esc(meta.native)}</span>
+          <div class="lesson-stats">
+            <div class="ls">
+              <div class="n" style="color:var(--sage-strong)">${faNum(count)}</div>
+              <div class="l">آنلاین</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap">${usersHtml}</div>
+      </div>
+    `;
+  }
+
+  function updateSupportBadge(count){
+    const badge = document.getElementById('badge-support');
+    if (!badge) return;
+    if (count > 0) { badge.style.display = 'inline-block'; badge.textContent = faNum(count); }
+    else badge.style.display = 'none';
+  }
+
+  // ===================== Support tickets =====================
+  const TICKET_CATEGORY_FA = { bug: 'مشکل فنی', account: 'حساب کاربری', suggestion: 'پیشنهاد', other: 'سایر' };
+  const TICKET_STATUS_FA = { open: 'در حال بررسی', answered: 'پاسخ داده شد', closed: 'بسته شده' };
+
+  async function renderSupport(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>تیکت‌های پشتیبانی</h2>
+        <p>پاسخ‌ها بلافاصله برای کاربر در اپ نمایش داده می‌شن</p>
+      </div>
+      <div class="toolbar">
+        <select class="filter-select" id="ticketFilterSel">
+          <option value="all">همه وضعیت‌ها</option>
+          <option value="open">در حال بررسی</option>
+          <option value="answered">پاسخ داده شده</option>
+          <option value="closed">بسته شده</option>
+        </select>
+      </div>
+      <div id="ticketListWrap"><div class="empty-state"><span class="loading-spin"></span></div></div>
+    `;
+    document.getElementById('ticketFilterSel').value = state.ticketFilter;
+    document.getElementById('ticketFilterSel').addEventListener('change', (e) => {
+      state.ticketFilter = e.target.value;
+      paintTicketList();
+    });
+
+    if (!state.ticketsLoaded) {
+      try {
+        const snap = await fbDb.ref('supportTickets').orderByChild('createdAt').limitToLast(300).once('value');
+        const val = snap.val() || {};
+        state.tickets = Object.keys(val).map(id => ({ id, ...val[id] })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+        state.ticketsLoaded = true;
+      } catch(e) {
+        toast('خطا در بارگذاری تیکت‌ها', 'err');
+        state.tickets = [];
+      }
+    }
+    paintTicketList();
+  }
+
+  function paintTicketList(){
+    const wrap = document.getElementById('ticketListWrap');
+    if (!wrap) return;
+    let list = state.tickets;
+    if (state.ticketFilter !== 'all') list = list.filter(t => t.status === state.ticketFilter);
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">${icon('support', 46)}<p>تیکتی یافت نشد.</p></div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(t => `
+      <div class="index-card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px">
+          <div>
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:3px">${esc(t.username || 'کاربر')}</div>
+            <div class="mono" style="font-size:11px;color:var(--placeholder)">${fmtDate(t.createdAt)} · ${esc(TICKET_CATEGORY_FA[t.category] || t.category || '—')}</div>
+          </div>
+          <span class="pill ${esc(t.status || 'open')}">${esc(TICKET_STATUS_FA[t.status] || t.status || '—')}</span>
+        </div>
+        <div style="font-size:13px;line-height:1.8;background:var(--panel2);border-radius:9px;padding:11px 13px;margin-bottom:10px">${esc(t.message || '')}</div>
+        ${t.adminReply ? `
+          <div style="font-size:12.5px;line-height:1.8;background:var(--sage-glow);border:1px solid rgba(79,184,106,0.25);border-radius:9px;padding:11px 13px;margin-bottom:10px">
+            <div style="font-size:10.5px;color:var(--sage-strong);font-weight:700;margin-bottom:5px">پاسخ پشتیبانی</div>
+            ${esc(t.adminReply)}
+          </div>
+        ` : ''}
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-small" onclick="__admin.openReplyModal('${esc(t.id)}')">${t.adminReply ? 'ویرایش پاسخ' : 'پاسخ‌دهی'}</button>
+          ${t.status !== 'closed' ? `<button class="btn-small" onclick="__admin.setTicketStatus('${esc(t.id)}','closed')">بستن تیکت</button>` : `<button class="btn-small" onclick="__admin.setTicketStatus('${esc(t.id)}','open')">بازکردن دوباره</button>`}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openReplyModal(ticketId){
+    const t = state.tickets.find(x => x.id === ticketId);
+    if (!t) return;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>پاسخ به تیکت</h3>
+        <div class="modal-sub">${esc(t.username || 'کاربر')} · ${esc(TICKET_CATEGORY_FA[t.category] || '')}</div>
+        <div style="font-size:12.5px;line-height:1.8;background:var(--panel2);border-radius:9px;padding:11px 13px;margin-bottom:14px;max-height:120px;overflow-y:auto">${esc(t.message || '')}</div>
+        <div class="mfield-group">
+          <label class="mlabel">پاسخ شما</label>
+          <textarea class="ta" id="replyText" placeholder="پاسخت رو بنویس...">${esc(t.adminReply || '')}</textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="replyCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="replySendBtn">ارسال پاسخ</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#replyCancelBtn').addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#replySendBtn').addEventListener('click', async () => {
+      const reply = backdrop.querySelector('#replyText').value.trim();
+      if (!reply) { toast('پاسخ نمی‌تونه خالی باشه', 'err'); return; }
+      try {
+        await fbDb.ref('supportTickets/' + ticketId).update({
+          adminReply: reply, status: 'answered', updatedAt: Date.now()
+        });
+        t.adminReply = reply; t.status = 'answered';
+        toast('پاسخ ارسال شد', 'ok');
+        backdrop.remove();
+        paintTicketList();
+      } catch(e) { toast('خطا در ارسال پاسخ', 'err'); }
+    });
+  }
+
+  async function setTicketStatus(ticketId, status){
+    try {
+      await fbDb.ref('supportTickets/' + ticketId).update({ status, updatedAt: Date.now() });
+      const t = state.tickets.find(x => x.id === ticketId);
+      if (t) t.status = status;
+      paintTicketList();
+      toast(status === 'closed' ? 'تیکت بسته شد' : 'تیکت دوباره باز شد', 'ok');
+    } catch(e) { toast('خطا در تغییر وضعیت', 'err'); }
+  }
+
+  // ===================== Users =====================
+  async function renderUsers(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>مدیریت کاربران</h2>
+        <p>مسدودسازی، ویرایش نام، سطح/امتیاز و مجوز ساخت گروه</p>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" id="userSearchInput" placeholder="جستجو با نام یا آیدی کاربری...">
+      </div>
+      <div id="userTableWrap"><div class="empty-state"><span class="loading-spin"></span></div></div>
+    `;
+    document.getElementById('userSearchInput').value = state.userSearch;
+    document.getElementById('userSearchInput').addEventListener('input', (e) => {
+      state.userSearch = e.target.value.trim().toLowerCase();
+      paintUserTable();
+    });
+
+    if (!state.usersLoaded) {
+      try {
+        const [leaderSnap, bansSnap, permsSnap, usersSnap] = await Promise.all([
+          fbDb.ref('leaderboard').once('value'),
+          fbDb.ref('bans').once('value'),
+          fbDb.ref('permissions').once('value'),
+          fbDb.ref('users').once('value'),
+        ]);
+        const leaderVal = leaderSnap.val() || {};
+        const usersVal = usersSnap.val() || {};
+        state.bans = bansSnap.val() || {};
+        state.permissions = {};
+        const permsVal = permsSnap.val() || {};
+        Object.keys(permsVal).forEach(uid => { state.permissions[uid] = !!(permsVal[uid] && permsVal[uid].canCreateGroups); });
+        state.userXpBonusCache = {};
+        Object.keys(usersVal).forEach(uid => { state.userXpBonusCache[uid] = usersVal[uid].adminXpBonus || 0; });
+        state.users = Object.keys(leaderVal).map(uid => ({ uid, ...leaderVal[uid] }))
+          .sort((a,b) => (b.xp||0) - (a.xp||0));
+        state.usersLoaded = true;
+      } catch(e) {
+        toast('خطا در بارگذاری کاربران', 'err');
+        state.users = [];
+      }
+    }
+    paintUserTable();
+  }
+
+  function paintUserTable(){
+    const wrap = document.getElementById('userTableWrap');
+    if (!wrap) return;
+    let list = state.users;
+    if (state.userSearch) {
+      list = list.filter(u =>
+        (u.name || '').toLowerCase().includes(state.userSearch) ||
+        (u.userId || '').toLowerCase().includes(state.userSearch)
+      );
+    }
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">${icon('users', 46)}<p>کاربری یافت نشد.</p></div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr>
+            <th>کاربر</th><th>آیدی</th><th>سطح</th><th>XP</th><th>مجوز گروه</th><th>وضعیت</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${list.map(u => renderUserRow(u)).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderUserRow(u){
+    const ban = state.bans[u.uid];
+    const isBanned = !!(ban && (!ban.until || ban.until > Date.now()));
+    const bonus = (state.userXpBonusCache && state.userXpBonusCache[u.uid]) || 0;
+    const xpTotal = (u.xp || 0) + bonus;
+    const info = computeLevelInfo(xpTotal);
+    const canGroup = !!state.permissions[u.uid];
+    return `
+      <tr data-uid="${esc(u.uid)}">
+        <td>${esc(u.name || '—')}</td>
+        <td class="mono" style="color:var(--muted)">@${esc(u.userId || '—')}</td>
+        <td class="mono">${faNum(info.level)}</td>
+        <td class="mono">${faNum(xpTotal)}</td>
+        <td>${canGroup ? `<span class="pill active">${icon('check',11)} دارد</span>` : `<span style="color:var(--placeholder);font-size:12px">ندارد</span>`}</td>
+        <td>${isBanned ? `<span class="pill banned">${icon('ban',11)} مسدود</span>` : `<span class="pill active">فعال</span>`}</td>
+        <td>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <button class="icon-btn" title="ویرایش" onclick="__admin.openEditUserModal('${esc(u.uid)}')">${icon('edit',14)}</button>
+            <button class="icon-btn" title="${isBanned ? 'رفع مسدودی' : 'مسدودسازی'}" onclick="__admin.openBanModal('${esc(u.uid)}')">${icon('ban',14)}</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function openEditUserModal(uid){
+    const u = state.users.find(x => x.uid === uid);
+    if (!u) return;
+    const bonus = (state.userXpBonusCache && state.userXpBonusCache[uid]) || 0;
+    const canGroup = !!state.permissions[uid];
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>ویرایش کاربر</h3>
+        <div class="modal-sub mono">@${esc(u.userId || '')} · ${esc(uid)}</div>
+        <div class="mfield-group">
+          <label class="mlabel">نام نمایشی</label>
+          <input class="mfield" id="editName" value="${esc(u.name || '')}">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">امتیاز جایزه (به XP واقعی کاربر اضافه می‌شود)</label>
+          <input class="mfield" id="editXpBonus" type="number" value="${bonus}">
+        </div>
+        <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
+          <span style="font-size:13px">مجوز ساخت گروه</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="editCanGroup" ${canGroup ? 'checked' : ''} style="opacity:0;width:0;height:0">
+            <span id="toggleTrack" style="position:absolute;inset:0;background:${canGroup ? 'var(--sage-strong)' : 'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="editCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="editSaveBtn">ذخیره تغییرات</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    const checkbox = backdrop.querySelector('#editCanGroup');
+    const track = backdrop.querySelector('#toggleTrack');
+    track.addEventListener('click', () => {
+      checkbox.checked = !checkbox.checked;
+      track.style.background = checkbox.checked ? 'var(--sage-strong)' : 'var(--border2)';
+    });
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#editCancelBtn').addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#editSaveBtn').addEventListener('click', async () => {
+      const newName = backdrop.querySelector('#editName').value.trim();
+      const newBonus = parseInt(backdrop.querySelector('#editXpBonus').value, 10) || 0;
+      const newCanGroup = checkbox.checked;
+      try {
+        await Promise.all([
+          fbDb.ref('leaderboard/' + uid).update({ name: newName || u.name || 'کاربر' }),
+          fbDb.ref('users/' + uid + '/adminXpBonus').set(newBonus),
+          fbDb.ref('permissions/' + uid + '/canCreateGroups').set(newCanGroup),
+        ]);
+        u.name = newName || u.name;
+        if (!state.userXpBonusCache) state.userXpBonusCache = {};
+        state.userXpBonusCache[uid] = newBonus;
+        state.permissions[uid] = newCanGroup;
+        toast('تغییرات ذخیره شد', 'ok');
+        backdrop.remove();
+        paintUserTable();
+      } catch(e) { toast('خطا در ذخیره‌سازی', 'err'); }
+    });
+  }
+
+  function openBanModal(uid){
+    const u = state.users.find(x => x.uid === uid);
+    if (!u) return;
+    const ban = state.bans[uid];
+    const isBanned = !!(ban && (!ban.until || ban.until > Date.now()));
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    if (isBanned) {
+      backdrop.innerHTML = `
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <h3>رفع مسدودیت</h3>
+          <div class="modal-sub">${esc(u.name || u.userId || 'کاربر')}</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.8">این کاربر در حال حاضر مسدود است. آیا مسدودیتش برداشته شود؟</p>
+          <div class="modal-actions">
+            <button class="btn-secondary" id="banCancelBtn">انصراف</button>
+            <button class="btn-confirm" id="unbanBtn">رفع مسدودی</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      backdrop.addEventListener('click', () => backdrop.remove());
+      backdrop.querySelector('#banCancelBtn').addEventListener('click', () => backdrop.remove());
+      backdrop.querySelector('#unbanBtn').addEventListener('click', async () => {
+        try {
+          await fbDb.ref('bans/' + uid).remove();
+          delete state.bans[uid];
+          toast('کاربر رفع مسدودیت شد', 'ok');
+          backdrop.remove();
+          paintUserTable();
+        } catch(e) { toast('خطا', 'err'); }
+      });
+    } else {
+      backdrop.innerHTML = `
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <h3>مسدودسازی کاربر</h3>
+          <div class="modal-sub">${esc(u.name || u.userId || 'کاربر')}</div>
+          <div class="mfield-group">
+            <label class="mlabel">نوع مسدودسازی</label>
+            <select class="mfield" id="banType">
+              <option value="permanent">دائمی</option>
+              <option value="1">۱ روز</option>
+              <option value="7">۷ روز</option>
+              <option value="30">۳۰ روز</option>
+            </select>
+          </div>
+          <div class="mfield-group">
+            <label class="mlabel">دلیل (اختیاری)</label>
+            <input class="mfield" id="banReason" placeholder="مثلاً نقض قوانین چت">
+          </div>
+          <div class="modal-actions">
+            <button class="btn-secondary" id="banCancelBtn">انصراف</button>
+            <button class="btn-danger" id="banConfirmBtn">مسدود کن</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      backdrop.addEventListener('click', () => backdrop.remove());
+      backdrop.querySelector('#banCancelBtn').addEventListener('click', () => backdrop.remove());
+      backdrop.querySelector('#banConfirmBtn').addEventListener('click', async () => {
+        const type = backdrop.querySelector('#banType').value;
+        const reason = backdrop.querySelector('#banReason').value.trim();
+        const until = type === 'permanent' ? null : Date.now() + parseInt(type, 10) * 86400000;
+        try {
+          await fbDb.ref('bans/' + uid).set({ until, reason: reason || null, bannedAt: Date.now() });
+          state.bans[uid] = { until, reason: reason || null, bannedAt: Date.now() };
+          toast('کاربر مسدود شد', 'ok');
+          backdrop.remove();
+          paintUserTable();
+        } catch(e) { toast('خطا', 'err'); }
+      });
+    }
+  }
+
+  window.__admin = { navigate, openReplyModal, setTicketStatus, openEditUserModal, openBanModal, openWordModal, deleteWord };
+
+  // ===================== Content management =====================
+  async function renderContent(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>مدیریت محتوا</h2>
+        <p>افزودن، ویرایش و حذف کلمات — تغییرات بلافاصله در اپ اعمال می‌شود</p>
+      </div>
+      <div class="tab-strip" id="langTabs"></div>
+      <div class="toolbar">
+        <select class="filter-select" id="levelSel">
+          ${CURRICULUM_LEVELS.map(l => `<option value="${l}" ${l === state.contentLevel ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <input class="search-input" id="contentSearchInput" placeholder="جستجو در کلمات...">
+        <button class="btn-small" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px" id="addWordBtn">${icon('plus',14)} افزودن کلمه</button>
+      </div>
+      <div id="wordListWrap"><div class="empty-state"><span class="loading-spin"></span></div></div>
+    `;
+
+    document.getElementById('langTabs').innerHTML = LANGUAGE_CODES.map(code => `
+      <button class="${code === state.contentLang ? 'active' : ''}" data-lang="${code}">${LANGUAGE_META[code].flag} ${LANGUAGE_META[code].native}</button>
+    `).join('');
+    document.querySelectorAll('#langTabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.contentLang = btn.getAttribute('data-lang');
+        state.contentWords = [];
+        loadContentWords();
+      });
+    });
+    document.getElementById('levelSel').addEventListener('change', (e) => {
+      state.contentLevel = e.target.value;
+      state.contentWords = [];
+      loadContentWords();
+    });
+    document.getElementById('contentSearchInput').value = state.contentSearch;
+    document.getElementById('contentSearchInput').addEventListener('input', (e) => {
+      state.contentSearch = e.target.value.trim().toLowerCase();
+      paintWordList();
+    });
+    document.getElementById('addWordBtn').addEventListener('click', () => openWordModal(null));
+
+    if (state.contentLang !== 'de') {
+      document.getElementById('wordListWrap').innerHTML = `<div class="empty-state">${icon('content',46)}<p>محتوای کلمات فعلاً فقط برای آلمانی موجود است.</p></div>`;
+      return;
+    }
+    await loadContentWords();
+  }
+
+  async function loadContentWords(){
+    const wrap = document.getElementById('wordListWrap');
+    if (wrap) wrap.innerHTML = `<div class="empty-state"><span class="loading-spin"></span></div>`;
+    if (state.contentLang !== 'de') {
+      if (wrap) wrap.innerHTML = `<div class="empty-state">${icon('content',46)}<p>محتوای کلمات فعلاً فقط برای آلمانی موجود است.</p></div>`;
+      return;
+    }
+    try {
+      const file = CURRICULUM_FILES[state.contentLevel];
+      const [res, overridesSnap] = await Promise.all([
+        fetch(file),
+        fbDb.ref('contentOverrides/' + state.contentLang + '/' + state.contentLevel).once('value'),
+      ]);
+      const base = res.ok ? await res.json() : [];
+      const overrides = overridesSnap.val() || null;
+      state.contentOverrides = overrides;
+      state.contentWords = applyOverrides(Array.isArray(base) ? base : [], overrides);
+      paintWordList();
+    } catch(e) {
+      console.error(e);
+      toast('خطا در بارگذاری کلمات', 'err');
+      const wrap2 = document.getElementById('wordListWrap');
+      if (wrap2) wrap2.innerHTML = `<div class="empty-state">${icon('content',46)}<p>خطا در بارگذاری فایل کلمات.</p></div>`;
+    }
+  }
+
+  function applyOverrides(baseWords, overrides){
+    if (!overrides) return baseWords;
+    let words = baseWords.slice();
+    const deletes = new Set(overrides.deletes || []);
+    if (deletes.size) words = words.filter(w => !deletes.has(String(w.id)));
+    if (overrides.edits) words = words.map(w => (overrides.edits[String(w.id)] ? { ...w, ...overrides.edits[String(w.id)] } : w));
+    if (Array.isArray(overrides.adds) && overrides.adds.length) words = words.concat(overrides.adds);
+    return words;
+  }
+
+  function paintWordList(){
+    const wrap = document.getElementById('wordListWrap');
+    if (!wrap) return;
+    let list = state.contentWords;
+    if (state.contentSearch) {
+      list = list.filter(w =>
+        (w.de || '').toLowerCase().includes(state.contentSearch) ||
+        (w.fa || '').toLowerCase().includes(state.contentSearch)
+      );
+    }
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">${icon('content', 46)}<p>کلمه‌ای یافت نشد.</p></div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>کلمه</th><th>معنی</th><th>دسته</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(w => `
+              <tr>
+                <td style="font-weight:600">${esc(w.de || '')}</td>
+                <td>${esc(w.fa || '')}</td>
+                <td style="color:var(--muted);font-size:12px">${esc(w.category || '—')}</td>
+                <td>
+                  <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <button class="icon-btn" title="ویرایش" onclick='__admin.openWordModal(${JSON.stringify(String(w.id))})'>${icon('edit',14)}</button>
+                    <button class="icon-btn" title="حذف" onclick='__admin.deleteWord(${JSON.stringify(String(w.id))})'>${icon('trash',14)}</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11.5px;color:var(--placeholder)">${faNum(list.length)} کلمه</div>
+    `;
+  }
+
+  function openWordModal(wordId){
+    const isNew = !wordId;
+    const w = isNew ? { id: '', de: '', fa: '', category: '', frequencyText: '', contextDe: '', contextFa: '' }
+                     : state.contentWords.find(x => String(x.id) === wordId);
+    if (!w) return;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>${isNew ? 'افزودن کلمه' : 'ویرایش کلمه'}</h3>
+        <div class="modal-sub">سطح ${esc(state.contentLevel)} · ${LANGUAGE_META[state.contentLang].native}</div>
+        <div class="mfield-row mfield-group">
+          <div>
+            <label class="mlabel">کلمه (آلمانی)</label>
+            <input class="mfield" id="wDe" value="${esc(w.de || '')}">
+          </div>
+          <div>
+            <label class="mlabel">معنی (فارسی)</label>
+            <input class="mfield" id="wFa" value="${esc(w.fa || '')}">
+          </div>
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">دسته‌بندی</label>
+          <input class="mfield" id="wCategory" value="${esc(w.category || '')}">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">جمله نمونه (آلمانی)</label>
+          <input class="mfield" id="wContextDe" value="${esc(w.contextDe || '')}">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">معنی جمله نمونه (فارسی)</label>
+          <input class="mfield" id="wContextFa" value="${esc(w.contextFa || '')}">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="wordCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="wordSaveBtn">ذخیره</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#wordCancelBtn').addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#wordSaveBtn').addEventListener('click', async () => {
+      const de = backdrop.querySelector('#wDe').value.trim();
+      const fa = backdrop.querySelector('#wFa').value.trim();
+      if (!de || !fa) { toast('کلمه و معنی هر دو الزامی هستند', 'err'); return; }
+      const fields = {
+        de, fa,
+        category: backdrop.querySelector('#wCategory').value.trim(),
+        contextDe: backdrop.querySelector('#wContextDe').value.trim(),
+        contextFa: backdrop.querySelector('#wContextFa').value.trim(),
+      };
+      try {
+        const basePath = 'contentOverrides/' + state.contentLang + '/' + state.contentLevel;
+        if (isNew) {
+          const newId = 'admin-' + Date.now();
+          const addsRef = fbDb.ref(basePath + '/adds');
+          const snap = await addsRef.once('value');
+          const adds = snap.val() || [];
+          adds.push({ id: newId, ...fields });
+          await addsRef.set(adds);
+        } else {
+          await fbDb.ref(basePath + '/edits/' + wordId).update(fields);
+        }
+        toast('کلمه ذخیره شد', 'ok');
+        backdrop.remove();
+        state.contentWords = [];
+        loadContentWords();
+      } catch(e) { toast('خطا در ذخیره‌سازی', 'err'); }
+    });
+  }
+
+  async function deleteWord(wordId){
+    if (!confirm('این کلمه حذف شود؟')) return;
+    try {
+      const basePath = 'contentOverrides/' + state.contentLang + '/' + state.contentLevel;
+      const deletesRef = fbDb.ref(basePath + '/deletes');
+      const snap = await deletesRef.once('value');
+      const deletes = snap.val() || [];
+      if (!deletes.includes(wordId)) deletes.push(wordId);
+      await deletesRef.set(deletes);
+      toast('کلمه حذف شد', 'ok');
+      state.contentWords = [];
+      loadContentWords();
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+})();
+</script>
+</body>
+</html>
