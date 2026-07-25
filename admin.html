@@ -1574,6 +1574,9 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     return map[type] || type;
   }
 
+  const AI_ASSISTANT_GEMINI_MODEL = 'gemini-3.6-flash'; // همون مدلی که اپ اصلی (index.html) استفاده می‌کنه
+  const AI_ASSISTANT_GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${AI_ASSISTANT_GEMINI_MODEL}:generateContent`;
+
   async function callAiAssistant(userText){
     const key = (state.aiConfigKey || '').trim();
     if (!key) throw new Error('کلید Gemini تنظیم نشده');
@@ -1589,18 +1592,32 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       ...history,
       { role: 'user', parts: [{ text: 'اطلاعات فعلی سیستم (context):\n' + JSON.stringify(context) + '\n\nدستور مدیر:\n' + userText }] },
     ];
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: AI_ASSISTANT_SYSTEM_PROMPT }] },
-        contents,
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-      }),
-    });
+    let res;
+    try {
+      res = await fetch(AI_ASSISTANT_GEMINI_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': key,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: AI_ASSISTANT_SYSTEM_PROMPT }] },
+          contents,
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+        }),
+      });
+    } catch(e) {
+      throw new Error('اتصال به سرویس هوش مصنوعی برقرار نشد');
+    }
     if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      throw new Error('پاسخ ناموفق از سرویس هوش مصنوعی (' + res.status + ')');
+      let msg = 'پاسخ ناموفق از سرویس هوش مصنوعی (کد ' + res.status + ')';
+      if (res.status === 401 || res.status === 403) msg = 'کلید Gemini نامعتبره یا دسترسی نداره';
+      else if (res.status === 429) msg = 'محدودیت نرخ درخواست (Rate limit) — چند لحظه صبر کن و دوباره امتحان کن';
+      try {
+        const errBody = await res.json();
+        if (errBody && errBody.error && errBody.error.message) msg = errBody.error.message;
+      } catch(e){}
+      throw new Error(msg);
     }
     const data = await res.json();
     const textOut = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
