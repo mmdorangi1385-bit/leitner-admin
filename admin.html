@@ -21,6 +21,19 @@
     --violet: #8B6FC9;
     --border: #333854; --border2: #3c4260; --divider: #292d40;
     --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --bg: #f3f0e8; --bg-radial: #ffffff; --panel: #ffffff; --panel2: #f1ede2; --panel3: #e9e3d4;
+    --ivory: #2a271f; --text: #2a271f; --muted: #7a7566; --placeholder: #a39d8c;
+    --brass: #a9824f; --brass-dark: #8a6a3e; --brass-glow: rgba(169,130,79,0.14);
+    --wine: #b6504f; --wine-glow: rgba(182,80,79,0.12);
+    --sage: #6c8a56; --sage-strong: #3f9556; --sage-glow: rgba(63,149,86,0.14);
+    --teal: #2b969d; --teal-dark: #1f7278; --teal-glow: rgba(43,150,157,0.12);
+    --violet: #7457b0;
+    --border: #e2ddd0; --border2: #d6cfbd; --divider: #eae5d9;
+    --shadow: 0 6px 18px rgba(60,50,30,0.10);
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -82,131 +95,147 @@
   #app.show { display: flex; }
 
   .sidebar {
-    width: 236px; flex-shrink: 0; background: var(--panel); border-inline-end: 1px solid var(--border);
-    display: flex; flex-direction: column; padding: 18px 14px; gap: 4px; position: sticky; top: 0; height: 100vh;
+    width: 208px; flex-shrink: 0; background: var(--panel); border-inline-end: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 14px 10px; gap: 3px; position: sticky; top: 0; height: 100vh;
   }
-  .side-brand { display: flex; align-items: center; gap: 9px; padding: 6px 8px 18px; }
-  .side-brand .box-icon { width: 26px; height: 26px; flex-shrink: 0; }
-  .side-brand span { font-size: 14.5px; font-weight: 700; }
-  .side-brand small { display: block; color: var(--muted); font-size: 10.5px; font-weight: 400; margin-top: 1px; }
+  .side-brand { display: flex; align-items: center; gap: 8px; padding: 4px 6px 14px; }
+  .side-brand .box-icon { width: 24px; height: 24px; flex-shrink: 0; }
+  .side-brand span { font-size: 13.5px; font-weight: 700; }
+  .side-brand small { display: block; color: var(--muted); font-size: 10px; font-weight: 400; margin-top: 1px; }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--panel2); border: 1px solid var(--border2); color: var(--muted);
+    border-radius: 9px; padding: 7px; font-size: 11.5px; font-weight: 500; width: 100%;
+    margin-bottom: 8px; transition: border-color 0.15s, color 0.15s;
+  }
+  .theme-toggle:hover { border-color: var(--brass); color: var(--text); }
+  .theme-toggle svg { width: 14px; height: 14px; flex-shrink: 0; }
 
   .drawer-tab {
-    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
-    color: var(--muted); font-size: 13.5px; font-weight: 500; position: relative;
-    border: 1px solid transparent; transition: background 0.15s, color 0.15s;
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px;
+    background: none; color: var(--muted); font-size: 12.5px; font-weight: 500; position: relative;
+    border: 1px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
   .drawer-tab:hover { background: var(--panel2); color: var(--text); }
   .drawer-tab.active { background: var(--panel2); color: var(--brass); border-color: var(--border2); }
   .drawer-tab.active::before {
-    content: ''; position: absolute; inset-inline-start: -14px; top: 50%; transform: translateY(-50%);
-    width: 3px; height: 18px; background: var(--brass); border-radius: 3px;
+    content: ''; position: absolute; inset-inline-start: -12px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; background: var(--brass); border-radius: 3px;
   }
-  .drawer-tab .dtab-icon { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.9; }
+  .drawer-tab .dtab-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.9; }
   .drawer-tab .badge-count {
-    margin-inline-start: auto; background: var(--wine); color: #fff; font-size: 10.5px; font-weight: 700;
-    border-radius: 20px; padding: 1px 7px; font-family: 'JetBrains Mono', monospace;
+    margin-inline-start: auto; background: var(--wine); color: #fff; font-size: 10px; font-weight: 700;
+    border-radius: 20px; padding: 1px 6px; font-family: 'JetBrains Mono', monospace;
   }
-  .sidebar-foot { margin-top: auto; padding: 10px 8px 4px; border-top: 1px solid var(--divider); }
-  .sidebar-foot .who { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-foot { margin-top: auto; padding: 8px 6px 2px; border-top: 1px solid var(--divider); }
+  .sidebar-foot .who { font-size: 11px; color: var(--muted); margin-bottom: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .btn-ghost {
     width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--muted);
-    border-radius: 9px; padding: 8px; font-size: 12.5px; transition: border-color 0.15s, color 0.15s;
+    border-radius: 9px; padding: 7px; font-size: 12px; transition: border-color 0.15s, color 0.15s;
   }
   .btn-ghost:hover { border-color: var(--wine); color: #e0a3a3; }
 
-  .main { flex: 1; min-width: 0; padding: 28px 32px 60px; max-width: 1180px; }
-  .page-head { margin-bottom: 24px; }
-  .page-head h2 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
-  .page-head p { color: var(--muted); font-size: 12.5px; margin: 0; }
+  .main { flex: 1; min-width: 0; padding: 22px 26px 50px; max-width: 1180px; }
+  .page-head { margin-bottom: 18px; }
+  .page-head h2 { font-size: 17px; margin: 0 0 3px; font-weight: 700; }
+  .page-head p { color: var(--muted); font-size: 12px; margin: 0; }
 
   /* ---------- Cards / index-card motif ---------- */
   .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
   }
   .index-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
-    position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 11px; padding: 13px 15px;
+    position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
   .index-card::before {
-    content: ''; position: absolute; inset-inline-start: 22px; top: 0; width: 34px; height: 8px;
+    content: ''; position: absolute; inset-inline-start: 20px; top: 0; width: 30px; height: 7px;
     background: var(--panel3); border: 1px solid var(--border2); border-top: none;
     border-radius: 0 0 5px 5px; opacity: 0.7;
   }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px; }
-  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
-  .stat-card .stat-label { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .stat-card .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 600; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; margin-bottom: 18px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .stat-card .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .stat-card .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 21px; font-weight: 600; }
   .stat-card .stat-value.brass { color: var(--brass); }
   .stat-card .stat-value.sage { color: var(--sage-strong); }
   .stat-card .stat-value.teal { color: var(--teal); }
   .stat-card .stat-value.wine { color: var(--wine); }
-  .stat-card .stat-sub { font-size: 11px; color: var(--placeholder); margin-top: 4px; }
+  .stat-card .stat-sub { font-size: 10.5px; color: var(--placeholder); margin-top: 3px; }
+
+  .league-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; border: 1px solid transparent;
+  }
+  .league-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
   .lesson-row {
-    display: flex; align-items: center; gap: 14px; padding: 13px 16px; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 11px; padding: 10px 13px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 11px; margin-bottom: 8px;
   }
-  .lesson-flag { font-size: 22px; }
-  .lesson-name { font-weight: 600; font-size: 14px; flex-shrink: 0; width: 100px; }
-  .presence-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sage-strong); box-shadow: 0 0 0 3px var(--sage-glow); }
-  .lesson-stats { display: flex; gap: 18px; margin-inline-start: auto; }
+  .lesson-flag { font-size: 18px; }
+  .lesson-name { font-weight: 600; font-size: 12.5px; flex-shrink: 0; width: 84px; }
+  .presence-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sage-strong); box-shadow: 0 0 0 3px var(--sage-glow); }
+  .lesson-stats { display: flex; gap: 14px; margin-inline-start: auto; }
   .lesson-stats .ls { text-align: center; }
-  .lesson-stats .ls .n { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; }
-  .lesson-stats .ls .l { font-size: 10px; color: var(--muted); }
+  .lesson-stats .ls .n { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; }
+  .lesson-stats .ls .l { font-size: 9.5px; color: var(--muted); }
   .btn-small {
     background: var(--panel2); border: 1px solid var(--border2); color: var(--text); border-radius: 8px;
-    padding: 7px 13px; font-size: 12px; font-weight: 500; transition: border-color 0.15s;
+    padding: 6px 11px; font-size: 11.5px; font-weight: 500; transition: border-color 0.15s;
   }
   .btn-small:hover { border-color: var(--brass); }
 
   .online-user-chip {
     display: inline-flex; align-items: center; gap: 6px; background: var(--panel2); border: 1px solid var(--border2);
-    border-radius: 20px; padding: 5px 11px 5px 8px; font-size: 12px; margin: 3px;
+    border-radius: 20px; padding: 4px 10px 4px 7px; font-size: 11.5px; margin: 3px;
   }
 
-  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   table.data-table th {
-    text-align: right; color: var(--muted); font-weight: 500; font-size: 11.5px; padding: 8px 12px;
+    text-align: right; color: var(--muted); font-weight: 500; font-size: 11px; padding: 7px 10px;
     border-bottom: 1px solid var(--border); white-space: nowrap;
   }
-  table.data-table td { padding: 10px 12px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+  table.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
   table.data-table tr:last-child td { border-bottom: none; }
   table.data-table tr:hover td { background: rgba(255,255,255,0.015); }
 
-  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
   .pill.open { background: var(--wine-glow); color: #e0a3a3; }
   .pill.answered { background: var(--sage-glow); color: var(--sage-strong); }
   .pill.closed { background: rgba(154,160,180,0.14); color: var(--muted); }
   .pill.banned { background: var(--wine-glow); color: #e0a3a3; }
   .pill.active { background: var(--sage-glow); color: var(--sage-strong); }
 
-  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 13px; flex-wrap: wrap; }
   .search-input {
     background: var(--panel); border: 1px solid var(--border2); color: var(--text); border-radius: 10px;
-    padding: 9px 14px; font-size: 13px; min-width: 220px; outline: none;
+    padding: 8px 12px; font-size: 12.5px; min-width: 200px; outline: none;
   }
   .search-input:focus { border-color: var(--brass); }
   select.filter-select {
     background: var(--panel); border: 1px solid var(--border2); color: var(--text); border-radius: 10px;
-    padding: 9px 12px; font-size: 13px; outline: none;
+    padding: 8px 11px; font-size: 12.5px; outline: none;
   }
 
   .icon-btn {
-    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+    width: 27px; height: 27px; display: inline-flex; align-items: center; justify-content: center;
     background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; color: var(--muted);
     transition: color 0.15s, border-color 0.15s;
   }
   .icon-btn:hover { color: var(--text); border-color: var(--brass); }
-  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn svg { width: 14px; height: 14px; }
 
   .modal-backdrop {
     position: fixed; inset: 0; background: rgba(10,11,17,0.65); backdrop-filter: blur(3px);
     display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px;
   }
+  [data-theme="light"] .modal-backdrop { background: rgba(40,35,25,0.35); }
   .modal-card {
-    background: var(--panel); border: 1px solid var(--border2); border-radius: 16px; padding: 24px;
-    width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; box-shadow: var(--shadow);
+    background: var(--panel); border: 1px solid var(--border2); border-radius: 15px; padding: 20px;
+    width: 100%; max-width: 460px; max-height: 86vh; overflow-y: auto; box-shadow: var(--shadow);
   }
   .modal-card h3 { margin: 0 0 4px; font-size: 16px; }
   .modal-card .modal-sub { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
@@ -225,24 +254,24 @@
   }
   textarea.ta {
     width: 100%; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
-    border-radius: 10px; padding: 11px 13px; font-size: 13.5px; outline: none; resize: vertical; min-height: 90px;
-    line-height: 1.7; font-family: inherit;
+    border-radius: 10px; padding: 10px 12px; font-size: 13px; outline: none; resize: vertical; min-height: 80px;
+    line-height: 1.65; font-family: inherit;
   }
   textarea.ta:focus, input.mfield:focus { border-color: var(--brass); }
   input.mfield {
     width: 100%; background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
-    border-radius: 10px; padding: 10px 12px; font-size: 13.5px; outline: none;
+    border-radius: 10px; padding: 9px 11px; font-size: 13px; outline: none;
   }
-  .mfield-row { display: flex; gap: 10px; }
+  .mfield-row { display: flex; gap: 9px; }
   .mfield-row > div { flex: 1; }
-  .mlabel { font-size: 11.5px; color: var(--muted); margin-bottom: 5px; display: block; }
-  .mfield-group { margin-bottom: 13px; }
+  .mlabel { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; }
+  .mfield-group { margin-bottom: 11px; }
 
   .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--muted);
+    text-align: center; padding: 46px 18px; color: var(--muted);
   }
-  .empty-state svg { width: 46px; height: 46px; opacity: 0.35; margin-bottom: 14px; }
-  .empty-state p { font-size: 13px; margin: 0; }
+  .empty-state svg { width: 38px; height: 38px; opacity: 0.35; margin-bottom: 12px; }
+  .empty-state p { font-size: 12.5px; margin: 0; }
 
   .loading-spin {
     display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2);
@@ -259,10 +288,10 @@
   .toast.err { border-color: rgba(182,92,92,0.4); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
 
-  .tab-strip { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--divider); }
+  .tab-strip { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--divider); overflow-x: auto; }
   .tab-strip button {
-    background: none; border: none; color: var(--muted); font-size: 13px; padding: 9px 4px; margin-inline-end: 18px;
-    border-bottom: 2px solid transparent; font-weight: 500;
+    background: none; border: none; color: var(--muted); font-size: 12.5px; padding: 8px 3px; margin-inline-end: 15px;
+    border-bottom: 2px solid transparent; font-weight: 500; white-space: nowrap; flex-shrink: 0;
   }
   .tab-strip button.active { color: var(--brass); border-color: var(--brass); }
 
@@ -274,25 +303,54 @@
     #app.show { flex-direction: column; }
     .sidebar {
       width: 100%; height: auto; position: sticky; top: 0; z-index: 50;
-      flex-direction: row; padding: 10px 12px; gap: 0;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      flex-direction: row; padding: 8px 10px; gap: 0;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      border-inline-end: none; border-bottom: 1px solid var(--border);
     }
     .side-brand, .sidebar-foot { display: none; }
+    .theme-toggle {
+      width: auto; flex-shrink: 0; margin-bottom: 0; padding: 0; border: none; background: none;
+      align-self: center;
+    }
+    .theme-toggle span { display: none; }
+    .theme-toggle svg { width: 19px; height: 19px; }
     /* #drawerTabs is the only visible child of .sidebar on mobile — it needs its own
        horizontal flex layout, otherwise each .drawer-tab (which is display:flex) collapses
        to a block box and the tabs stack on top of each other instead of sitting in a row. */
     #drawerTabs {
-      display: flex; gap: 8px; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      display: flex; gap: 7px; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding: 2px 1px;
     }
     #drawerTabs::-webkit-scrollbar { display: none; }
-    .drawer-tab { flex-shrink: 0; white-space: nowrap; }
+    .drawer-tab {
+      flex-shrink: 0; white-space: nowrap; flex-direction: column; gap: 3px;
+      padding: 7px 12px 6px; border-radius: 14px; font-size: 10.5px;
+      background: var(--panel2); border: 1px solid var(--border);
+    }
+    .drawer-tab span:not(.dtab-icon):not(.badge-count) { font-size: 10px; }
+    .drawer-tab .dtab-icon { width: 16px; height: 16px; }
+    .drawer-tab.active {
+      background: var(--brass-glow); color: var(--brass); border-color: var(--brass);
+    }
     .drawer-tab.active::before { display: none; } /* the vertical accent bar only makes sense in a column layout */
-    .main { padding: 18px 16px 50px; }
+    .drawer-tab .badge-count { position: absolute; top: -4px; inset-inline-end: -4px; margin: 0; }
+    .main { padding: 14px 12px 40px; }
+    .page-head h2 { font-size: 15.5px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-card { padding: 10px 12px; }
+    .stat-card .stat-value { font-size: 18px; }
   }
 </style>
 </head>
 <body>
+<script>
+  (function(){
+    try {
+      var saved = localStorage.getItem('leitnerAdminTheme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch(e){}
+  })();
+</script>
 
 <div id="authGate">
   <div class="auth-card">
@@ -322,6 +380,7 @@
       <img class="box-icon img-logo" src="icon-hero.png" alt="">
       <span>جعبه لایتنر<small>پنل مدیریت</small></span>
     </div>
+    <button class="theme-toggle" id="themeToggleBtn" type="button" title="تغییر پوسته"></button>
     <div id="drawerTabs"></div>
     <div class="sidebar-foot">
       <div class="who mono" id="whoBox">—</div>
@@ -396,6 +455,23 @@
     while (remaining >= need(level)){ remaining -= need(level); level++; }
     return { level, xpIntoLevel: remaining, xpForNext: need(level) };
   }
+  // همون ۶ لیگ اپ اصلی (بر اساس لول)، برای نمایش خلاصه‌شده توی جدول مدیریت کاربران
+  const LEAGUES = [
+    { key: 'bronze', label: 'برنزی', from: 1, to: 5, color: '#c9793a' },
+    { key: 'silver', label: 'نقره‌ای', from: 6, to: 10, color: '#9aa0b4' },
+    { key: 'gold', label: 'طلایی', from: 11, to: 15, color: '#e0b84a' },
+    { key: 'platinum', label: 'پلاتینی', from: 16, to: 20, color: '#6bb0a8' },
+    { key: 'diamond', label: 'الماسی', from: 21, to: 25, color: '#3fc1c9' },
+    { key: 'master', label: 'استاد', from: 26, to: Infinity, color: '#8B6FC9' },
+  ];
+  function leagueForLevel(level){
+    return LEAGUES.find(l => level >= l.from && level <= l.to) || LEAGUES[LEAGUES.length - 1];
+  }
+  function leaguePillHtml(level){
+    const l = leagueForLevel(level);
+    return `<span class="league-pill" style="background:${l.color}22;color:${l.color};border-color:${l.color}55">
+      <span class="league-dot" style="background:${l.color}"></span>${l.label}</span>`;
+  }
 
   const ICONS = {
     dashboard: '<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',
@@ -411,11 +487,39 @@
     reply: '<path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/>',
     bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
     power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5-5L5 21"/>',
+    video: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>',
+    mic: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
   };
   function icon(name, size){
     size = size || 16;
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">${ICONS[name] || ''}</svg>`;
   }
+
+  // ===================== Theme (dark/light) =====================
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function paintThemeToggle(){
+    const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+    const t = currentTheme();
+    btn.innerHTML = t === 'light'
+      ? `${icon('moon', 14)}<span>حالت تاریک</span>`
+      : `${icon('sun', 14)}<span>حالت روشن</span>`;
+  }
+  function setTheme(t){
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme');
+    try { localStorage.setItem('leitnerAdminTheme', t); } catch(e){}
+    paintThemeToggle();
+  }
+  document.getElementById('themeToggleBtn').addEventListener('click', () => {
+    setTheme(currentTheme() === 'light' ? 'dark' : 'light');
+  });
+  paintThemeToggle();
 
   // ===================== State =====================
   const state = {
@@ -425,7 +529,8 @@
     dashboard: { totalUsers: null, presence: {}, presenceUsers: {} },
     tickets: [], ticketsLoaded: false, ticketFilter: 'all',
     users: [], usersLoaded: false, userSearch: '',
-    bans: {}, permissions: {},
+    bans: {}, permissions: {}, aiPermissions: {},
+    aiConfigKey: '', aiConfigLoaded: false, showAiConfigKey: false,
     contentLang: 'de', contentLevel: 'A1', contentWords: [], contentLoading: false, contentSearch: '',
     contentOverrides: null,
     appStatus: { closed: false, message: '' }, appStatusLoaded: false,
@@ -561,6 +666,49 @@
           <div class="stat-value wine" id="statOpenTickets"><span class="loading-spin"></span></div>
         </div>
       </div>
+      <div class="card" style="padding:20px 22px;margin-bottom:22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px">${icon('users',14)} کاربران جدید ثبت‌نامی</div>
+        <div class="stat-sub" style="margin-bottom:14px">تعداد کاربرانی که در هر بازه‌ی زمانی ثبت‌نام کرده‌اند</div>
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat-card">
+            <div class="stat-label">امروز</div>
+            <div class="stat-value teal" id="statNewDay"><span class="loading-spin"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">۷ روز اخیر</div>
+            <div class="stat-value teal" id="statNewWeek"><span class="loading-spin"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">۳۰ روز اخیر</div>
+            <div class="stat-value teal" id="statNewMonth"><span class="loading-spin"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">۶ ماه اخیر</div>
+            <div class="stat-value teal" id="statNewSixMonth"><span class="loading-spin"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px 22px;margin-bottom:22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px">${icon('image',14)} رسانه‌های ارسالی در چت کاربران</div>
+        <div class="stat-sub" style="margin-bottom:14px">تعداد و مجموع حجم فایل‌هایی که کاربران در چت برای هم فرستاده‌اند</div>
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat-card">
+            <div class="stat-label">${icon('image',13)} عکس</div>
+            <div class="stat-value brass" id="statMediaImageCount"><span class="loading-spin"></span></div>
+            <div class="stat-sub" id="statMediaImageSize">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">${icon('video',13)} ویدیو</div>
+            <div class="stat-value brass" id="statMediaVideoCount"><span class="loading-spin"></span></div>
+            <div class="stat-sub" id="statMediaVideoSize">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">${icon('mic',13)} ویس</div>
+            <div class="stat-value brass" id="statMediaAudioCount"><span class="loading-spin"></span></div>
+            <div class="stat-sub" id="statMediaAudioSize">—</div>
+          </div>
+        </div>
+      </div>
       <div class="card" style="padding:20px 22px">
         <div style="font-weight:700;font-size:14px;margin-bottom:14px">کاربران آنلاین به تفکیک درس (زبان)</div>
         <div id="lessonList"></div>
@@ -577,6 +725,28 @@
       console.error('loadTotalUsers error:', e);
       const el = document.querySelector('#statGrid .stat-card:nth-child(1) .stat-value');
       if (el) el.textContent = '—';
+    });
+
+    // New users per period — reads users/{uid}/createdAt (written at signup time in the app).
+    // نکته: این createdAt فقط برای کاربرهایی ثبت می‌شه که بعد از اضافه‌شدن این قابلیت ثبت‌نام کرده باشن؛
+    // کاربرهای قدیمی‌تر که این فیلد رو ندارن توی این شمارش‌ها لحاظ نمی‌شن.
+    loadNewUsersStats().then((s) => {
+      const dEl = document.getElementById('statNewDay'); if (dEl) dEl.textContent = faNum(s.day);
+      const wEl = document.getElementById('statNewWeek'); if (wEl) wEl.textContent = faNum(s.week);
+      const mEl = document.getElementById('statNewMonth'); if (mEl) mEl.textContent = faNum(s.month);
+      const smEl = document.getElementById('statNewSixMonth'); if (smEl) smEl.textContent = faNum(s.sixMonth);
+    });
+
+    // Media stats — mediaStats/{image,video,audio}: { count, totalBytes } — این شمارنده‌ها هر بار
+    // که کاربری عکس/ویدیو/ویس توی چت می‌فرسته توسط خودِ اپ (index.html) بروزرسانی می‌شن.
+    loadMediaStats().then((s) => {
+      const setStat = (countId, sizeId, entry) => {
+        const cEl = document.getElementById(countId); if (cEl) cEl.textContent = faNum(entry.count);
+        const sEl = document.getElementById(sizeId); if (sEl) sEl.textContent = fmtBytes(entry.totalBytes);
+      };
+      setStat('statMediaImageCount', 'statMediaImageSize', s.image);
+      setStat('statMediaVideoCount', 'statMediaVideoSize', s.video);
+      setStat('statMediaAudioCount', 'statMediaAudioSize', s.audio);
     });
 
     // Open tickets count
@@ -631,6 +801,58 @@
         <div style="display:flex;flex-wrap:wrap">${usersHtml}</div>
       </div>
     `;
+  }
+
+  async function loadNewUsersStats(){
+    const DAY = 86400000;
+    const empty = { day: 0, week: 0, month: 0, sixMonth: 0 };
+    try {
+      const snap = await fbDb.ref('users').once('value');
+      const val = snap.val() || {};
+      const now = Date.now();
+      const result = { ...empty };
+      Object.keys(val).forEach((uid) => {
+        const createdAt = val[uid] && val[uid].createdAt;
+        if (typeof createdAt !== 'number') return;
+        const diff = now - createdAt;
+        if (diff < 0) return;
+        if (diff <= DAY) result.day++;
+        if (diff <= 7 * DAY) result.week++;
+        if (diff <= 30 * DAY) result.month++;
+        if (diff <= 182 * DAY) result.sixMonth++;
+      });
+      return result;
+    } catch (e) {
+      console.error('loadNewUsersStats error:', e);
+      return empty;
+    }
+  }
+
+  function fmtBytes(bytes){
+    bytes = Number(bytes) || 0;
+    if (bytes <= 0) return '۰ کیلوبایت';
+    const units = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت'];
+    let i = 0;
+    let val = bytes;
+    while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+    const rounded = val >= 100 ? Math.round(val) : Math.round(val * 10) / 10;
+    return faNum(rounded) + ' ' + units[i];
+  }
+
+  async function loadMediaStats(){
+    const empty = { count: 0, totalBytes: 0 };
+    const out = { image: { ...empty }, video: { ...empty }, audio: { ...empty } };
+    try {
+      const snap = await fbDb.ref('mediaStats').once('value');
+      const val = snap.val() || {};
+      ['image', 'video', 'audio'].forEach((type) => {
+        const entry = val[type];
+        if (entry) out[type] = { count: entry.count || 0, totalBytes: entry.totalBytes || 0 };
+      });
+    } catch (e) {
+      console.error('loadMediaStats error:', e);
+    }
+    return out;
   }
 
   function updateSupportBadge(count){
@@ -707,9 +929,10 @@
             ${esc(t.adminReply)}
           </div>
         ` : ''}
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="btn-small" onclick="__admin.openReplyModal('${esc(t.id)}')">${t.adminReply ? 'ویرایش پاسخ' : 'پاسخ‌دهی'}</button>
           ${t.status !== 'closed' ? `<button class="btn-small" onclick="__admin.setTicketStatus('${esc(t.id)}','closed')">بستن تیکت</button>` : `<button class="btn-small" onclick="__admin.setTicketStatus('${esc(t.id)}','open')">بازکردن دوباره</button>`}
+          <button class="btn-small" style="color:#e0a3a3;border-color:rgba(182,92,92,0.4)" onclick="__admin.deleteTicket('${esc(t.id)}')">${icon('trash',12)} حذف تیکت</button>
         </div>
       </div>
     `).join('');
@@ -763,6 +986,18 @@
     } catch(e) { toast('خطا در تغییر وضعیت', 'err'); }
   }
 
+  // حذف کامل تیکت از دیتابیس — چون هم پنل مدیریت و هم اپ کاربر مستقیماً از همین مسیر
+  // (supportTickets/{id}) می‌خونن، این حذف هم از لیست ادمین پاک می‌شه و هم از تاریخچه‌ی کاربر.
+  async function deleteTicket(ticketId){
+    if (!confirm('این تیکت برای همیشه حذف بشه؟ این کار هم از پنل مدیریت و هم از تاریخچه‌ی تیکت‌های کاربر پاکش می‌کنه.')) return;
+    try {
+      await fbDb.ref('supportTickets/' + ticketId).remove();
+      state.tickets = state.tickets.filter(t => t.id !== ticketId);
+      paintTicketList();
+      toast('تیکت حذف شد', 'ok');
+    } catch(e) { toast('خطا در حذف تیکت', 'err'); }
+  }
+
   // ===================== Users =====================
   async function renderUsers(){
     const main = document.getElementById('mainArea');
@@ -794,10 +1029,12 @@
         const usersVal = usersSnap.val() || {};
         state.bans = bansSnap.val() || {};
         state.permissions = {};
+        state.aiPermissions = {};
         state.userIdMaxChangesCache = {};
         const permsVal = permsSnap.val() || {};
         Object.keys(permsVal).forEach(uid => {
           state.permissions[uid] = !!(permsVal[uid] && permsVal[uid].canCreateGroups);
+          state.aiPermissions[uid] = !!(permsVal[uid] && permsVal[uid].canUseAi);
           if (permsVal[uid] && typeof permsVal[uid].userIdMaxChanges === 'number') {
             state.userIdMaxChangesCache[uid] = permsVal[uid].userIdMaxChanges;
           }
@@ -834,7 +1071,7 @@
       <div class="card" style="padding:0;overflow-x:auto">
         <table class="data-table">
           <thead><tr>
-            <th>کاربر</th><th>آیدی</th><th>سطح</th><th>XP</th><th>مجوز گروه</th><th>وضعیت</th><th></th>
+            <th>کاربر</th><th>آیدی</th><th>سطح</th><th>لیگ</th><th>XP</th><th>مجوز گروه</th><th>هوش مصنوعی</th><th>وضعیت</th><th></th>
           </tr></thead>
           <tbody>
             ${list.map(u => renderUserRow(u)).join('')}
@@ -851,13 +1088,16 @@
     const xpTotal = (u.xp || 0) + bonus;
     const info = computeLevelInfo(xpTotal);
     const canGroup = !!state.permissions[u.uid];
+    const canAi = !!state.aiPermissions[u.uid];
     return `
       <tr data-uid="${esc(u.uid)}">
         <td>${esc(u.name || '—')}</td>
         <td class="mono" style="color:var(--muted)">@${esc(u.userId || '—')}</td>
         <td class="mono">${faNum(info.level)}</td>
+        <td>${leaguePillHtml(info.level)}</td>
         <td class="mono">${faNum(xpTotal)}</td>
         <td>${canGroup ? `<span class="pill active">${icon('check',11)} دارد</span>` : `<span style="color:var(--placeholder);font-size:12px">ندارد</span>`}</td>
+        <td>${canAi ? `<span class="pill active">${icon('check',11)} دارد</span>` : `<span style="color:var(--placeholder);font-size:12px">ندارد</span>`}</td>
         <td>${isBanned ? `<span class="pill banned">${icon('ban',11)} مسدود</span>` : `<span class="pill active">فعال</span>`}</td>
         <td>
           <div style="display:flex;gap:6px;justify-content:flex-end">
@@ -876,6 +1116,7 @@
     if (!u) return;
     const bonus = (state.userXpBonusCache && state.userXpBonusCache[uid]) || 0;
     const canGroup = !!state.permissions[uid];
+    const canAi = !!state.aiPermissions[uid];
     const maxIdChanges = (state.userIdMaxChangesCache && typeof state.userIdMaxChangesCache[uid] === 'number')
       ? state.userIdMaxChangesCache[uid] : DEFAULT_USER_ID_MAX_CHANGES;
     const backdrop = document.createElement('div');
@@ -900,7 +1141,14 @@
           <span style="font-size:13px">مجوز ساخت گروه</span>
           <label style="position:relative;display:inline-block;width:40px;height:22px">
             <input type="checkbox" id="editCanGroup" ${canGroup ? 'checked' : ''} style="opacity:0;width:0;height:0">
-            <span id="toggleTrack" style="position:absolute;inset:0;background:${canGroup ? 'var(--sage-strong)' : 'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+            <span id="toggleTrackGroup" style="position:absolute;inset:0;background:${canGroup ? 'var(--sage-strong)' : 'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+        <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
+          <span style="font-size:13px">مجوز استفاده از هوش مصنوعی (Gemini)</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="editCanAi" ${canAi ? 'checked' : ''} style="opacity:0;width:0;height:0">
+            <span id="toggleTrackAi" style="position:absolute;inset:0;background:${canAi ? 'var(--sage-strong)' : 'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
           </label>
         </div>
         <div class="modal-actions">
@@ -911,10 +1159,16 @@
     `;
     document.body.appendChild(backdrop);
     const checkbox = backdrop.querySelector('#editCanGroup');
-    const track = backdrop.querySelector('#toggleTrack');
+    const track = backdrop.querySelector('#toggleTrackGroup');
     track.addEventListener('click', () => {
       checkbox.checked = !checkbox.checked;
       track.style.background = checkbox.checked ? 'var(--sage-strong)' : 'var(--border2)';
+    });
+    const aiCheckbox = backdrop.querySelector('#editCanAi');
+    const aiTrack = backdrop.querySelector('#toggleTrackAi');
+    aiTrack.addEventListener('click', () => {
+      aiCheckbox.checked = !aiCheckbox.checked;
+      aiTrack.style.background = aiCheckbox.checked ? 'var(--sage-strong)' : 'var(--border2)';
     });
     backdrop.addEventListener('click', () => backdrop.remove());
     backdrop.querySelector('#editCancelBtn').addEventListener('click', () => backdrop.remove());
@@ -922,6 +1176,7 @@
       const newName = backdrop.querySelector('#editName').value.trim();
       const newBonus = parseInt(backdrop.querySelector('#editXpBonus').value, 10) || 0;
       const newCanGroup = checkbox.checked;
+      const newCanAi = aiCheckbox.checked;
       let newMaxIdChanges = parseInt(backdrop.querySelector('#editIdMaxChanges').value, 10);
       if (isNaN(newMaxIdChanges) || newMaxIdChanges < 0) newMaxIdChanges = DEFAULT_USER_ID_MAX_CHANGES;
       try {
@@ -929,12 +1184,15 @@
           fbDb.ref('leaderboard/' + uid).update({ name: newName || u.name || 'کاربر' }),
           fbDb.ref('users/' + uid + '/adminXpBonus').set(newBonus),
           fbDb.ref('permissions/' + uid + '/canCreateGroups').set(newCanGroup),
+          fbDb.ref('permissions/' + uid + '/canUseAi').set(newCanAi),
           fbDb.ref('permissions/' + uid + '/userIdMaxChanges').set(newMaxIdChanges),
         ]);
         u.name = newName || u.name;
         if (!state.userXpBonusCache) state.userXpBonusCache = {};
         state.userXpBonusCache[uid] = newBonus;
         state.permissions[uid] = newCanGroup;
+        if (!state.aiPermissions) state.aiPermissions = {};
+        state.aiPermissions[uid] = newCanAi;
         if (!state.userIdMaxChangesCache) state.userIdMaxChangesCache = {};
         state.userIdMaxChangesCache[uid] = newMaxIdChanges;
         toast('تغییرات ذخیره شد', 'ok');
@@ -1017,7 +1275,7 @@
     }
   }
 
-  window.__admin = { navigate, openReplyModal, setTicketStatus, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast };
+  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast };
 
   // ===================== Content management =====================
   async function renderContent(){
@@ -1247,8 +1505,21 @@
       </div>
 
       <div class="card" style="margin-bottom:22px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">✨ کلید مرکزی هوش مصنوعی (Gemini)</div>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">این کلید فقط این‌جا (پیش تو) ذخیره می‌شه و کاربرها هیچ‌وقت مستقیم نمی‌بینّنش. بخش هوش مصنوعی توی اپ به‌صورت پیش‌فرض برای همه بسته‌ست؛ فقط کاربرهایی که از صفحه‌ی «مدیریت کاربران» مجوز «استفاده از هوش مصنوعی» رو براشون فعال کنی، می‌تونن ازش استفاده کنن — بدون این‌که خودشون هیچ کلیدی وارد کنن. مدل استفاده‌شده ثابته روی <code>gemini-3-flash-preview</code>.</p>
+        <p style="color:var(--wine);font-size:12px;margin:0 0 16px">⚠️ نکته‌ی امنیتی مهم: چون این اپ کاملاً سمت کاربره (بدون سرور واسط)، هر کاربری که بهش مجوز بدی فنی می‌تونه این کلید رو توی تب Network مرورگرش ببینه. برای این‌که کاربرهای بدون مجوز اصلاً نتونن این کلید رو از فایربیس بخونن، باید توی «Realtime Database Rules» فایربیس یه قانون مثل این اضافه کنی (تا فقط کاربرهایی که <code>permissions/UID/canUseAi</code>شون true هست بتونن <code>aiConfig/geminiKey</code> رو بخونن):</p>
+        <pre style="background:var(--panel2);border-radius:8px;padding:10px 12px;font-size:11px;overflow-x:auto;direction:ltr;text-align:left">"aiConfig": {
+  "geminiKey": {
+    ".read": "auth != null && root.child('permissions').child(auth.uid).child('canUseAi').val() === true",
+    ".write": "auth != null && auth.uid === 'YOUR_ADMIN_UID'"
+  }
+}</pre>
+        <div id="aiConfigWrap"><span class="loading-spin"></span></div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px">
         <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${icon('bell',15)} ارسال نوتیفیکیشن به همه‌ی کاربران</div>
-        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">متن دلخواه رو بنویس؛ می‌تونی همین الان بفرستی یا برای چند ساعت دیگه زمان‌بندی کنی.</p>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">متن دلخواه رو بنویس؛ می‌تونی همین الان بفرستی یا برای چند ساعت دیگه زمان‌بندی کنی. این پیام به‌صورت نوتیفیکیشن واقعی بالای گوشی نمایش داده می‌شه — برای کاربرهایی که اپ باز/در پس‌زمینه‌ست فوری، و برای کاربرهایی که اپ رو کامل بسته‌ن (فقط اندروید/کروم با نصب PWA) با تاخیر و بدون تضمین زمان دقیق. همه‌ی این‌ها فقط برای کسایی که قبلاً اجازه‌ی نوتیفیکیشن رو داده باشن کار می‌کنه؛ بقیه پیام رو به‌صورت کارت داخل اپ می‌بینن. (نکته‌ی فنی: برای کارکردن چک پس‌زمینه، مسیر broadcastNotifications باید توی قوانین امنیتی فایربیس اجازه‌ی خواندن عمومی داشته باشه.)</p>
         <div class="mfield-group">
           <label class="mlabel">متن نوتیفیکیشن</label>
           <textarea class="ta" id="bcMessage" placeholder="پیامت رو اینجا بنویس..."></textarea>
@@ -1285,6 +1556,8 @@
 
     await loadAppStatus();
     paintAppStatus();
+    await loadAiConfig();
+    paintAiConfig();
     await loadBroadcasts();
     paintBroadcastList();
   }
@@ -1333,6 +1606,57 @@
       toast(closed ? 'برنامه بسته شد' : 'برنامه باز شد', 'ok');
       paintAppStatus();
     } catch(e) { toast('خطا در ذخیره‌سازی وضعیت برنامه', 'err'); }
+  }
+
+  // --- کلید مرکزی Gemini — aiConfig/geminiKey ---
+  // فقط از همین پنل مدیریت نوشته/خونده می‌شه؛ کاربرهای عادی فقط وقتی permissions/{uid}/canUseAi
+  // روشون true باشه می‌تونن (طبق قوانین امنیتی فایربیس) این مسیر رو بخونن. نگاه کن به index.html
+  // (تابع attachAiAccessListener) برای دیدن این‌که اپ اصلی چطور ازش استفاده می‌کنه.
+  async function loadAiConfig(){
+    try {
+      const snap = await fbDb.ref('aiConfig/geminiKey').once('value');
+      state.aiConfigKey = snap.val() || '';
+      state.aiConfigLoaded = true;
+    } catch(e) {
+      console.error('loadAiConfig error:', e);
+      state.aiConfigKey = '';
+    }
+  }
+
+  function paintAiConfig(){
+    const wrap = document.getElementById('aiConfigWrap');
+    if (!wrap) return;
+    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px;margin-bottom:14px">
+        <span style="font-size:13px">${hasKey ? 'یک کلید Gemini ذخیره شده' : 'هنوز کلیدی ذخیره نشده'}</span>
+        <span class="pill ${hasKey ? 'active' : 'banned'}">${hasKey ? icon('check',11) + ' فعال' : icon('ban',11) + ' خالی'}</span>
+      </div>
+      <div class="mfield-group">
+        <label class="mlabel">کلید Gemini API</label>
+        <div style="display:flex;gap:8px">
+          <input class="mfield" id="aiConfigKeyInput" style="flex:1" type="${state.showAiConfigKey ? 'text' : 'password'}" placeholder="AQ...." value="${esc(state.aiConfigKey)}">
+          <button class="icon-btn" id="aiConfigKeyToggleBtn" title="نمایش/مخفی">${icon(state.showAiConfigKey ? 'ban' : 'check', 14)}</button>
+        </div>
+      </div>
+      <button class="btn-confirm" id="aiConfigSaveBtn" style="width:auto;padding:10px 20px">ذخیره کلید</button>
+    `;
+    document.getElementById('aiConfigKeyToggleBtn').addEventListener('click', () => {
+      state.showAiConfigKey = !state.showAiConfigKey;
+      paintAiConfig();
+    });
+    document.getElementById('aiConfigSaveBtn').addEventListener('click', saveAiConfigKey);
+  }
+
+  async function saveAiConfigKey(){
+    const el = document.getElementById('aiConfigKeyInput');
+    const key = el ? el.value.trim() : '';
+    try {
+      await fbDb.ref('aiConfig/geminiKey').set(key);
+      state.aiConfigKey = key;
+      toast(key ? 'کلید ذخیره شد' : 'کلید پاک شد', 'ok');
+      paintAiConfig();
+    } catch(e) { toast('خطا در ذخیره‌سازی کلید', 'err'); }
   }
 
   async function loadBroadcasts(){
@@ -1401,6 +1725,12 @@
       toast('لغو شد', 'ok');
       paintBroadcastList();
     } catch(e) { toast('خطا در لغو', 'err'); }
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw-admin.js').catch((e) => console.error('Admin SW registration failed', e));
+    });
   }
 })();
 </script>
