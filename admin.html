@@ -571,7 +571,7 @@
     tickets: [], ticketsLoaded: false, ticketFilter: 'all',
     users: [], usersLoaded: false, userSearch: '',
     bans: {}, permissions: {}, aiPermissions: {},
-    aiConfigKey: '', aiConfigLoaded: false, showAiConfigKey: false,
+    aiConfigKeys: [], aiConfigModel: '', aiConfigLoaded: false, showAiConfigKeys: false, aiConfigNewKeyDraft: '',
     contentLang: 'de', contentLevel: 'A1', contentWords: [], contentLoading: false, contentSearch: '',
     contentOverrides: null,
     appStatus: { closed: false, message: '' }, appStatusLoaded: false,
@@ -1445,7 +1445,6 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       <div id="aiAssistantBody"></div>
     `;
     await ensureAiContextLoaded();
-    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
     if (!state.aiConfigLoaded) await loadAiConfig();
     paintAssistantBody();
   }
@@ -1453,7 +1452,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
   function paintAssistantBody(){
     const body = document.getElementById('aiAssistantBody');
     if (!body) return;
-    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
+    const hasKey = !!(state.aiConfigKeys && state.aiConfigKeys.length);
     if (!hasKey) {
       body.innerHTML = `
         <div class="card ai-no-key">
@@ -1574,12 +1573,38 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     return map[type] || type;
   }
 
-  const AI_ASSISTANT_GEMINI_MODEL = 'gemini-3.6-flash'; // همون مدلی که اپ اصلی (index.html) استفاده می‌کنه
-  const AI_ASSISTANT_GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${AI_ASSISTANT_GEMINI_MODEL}:generateContent`;
+  // لیست مدل‌های فعلیِ Gemini که هنوز از رده خارج نشدن و رایگان‌ان (Flash / Flash-Lite)؛ باید دقیقاً
+  // با همین لیست توی index.html یکی باشه چون هر دو از یک aiConfig/geminiModel می‌خونن.
+  const DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash';
+  const AVAILABLE_GEMINI_MODELS = [
+    'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash',
+    'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
+  ];
+  function geminiEndpointFor(model){
+    const m = AVAILABLE_GEMINI_MODELS.includes(model) ? model : DEFAULT_GEMINI_MODEL;
+    return `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
+  }
+  // چرخش بین چند کلید Gemini (aiConfig/geminiKeys) با یک شمارنده‌ی مشترک توی فایربیس؛ همون منطقِ
+  // index.html، چون این پنل هم از همون استخر کلید مشترک استفاده می‌کنه (نگاه کن به index.html
+  // برای توضیح کامل و نکته‌ی امنیتیِ لازم توی Realtime Database Rules).
+  async function pickNextGeminiKey(keys){
+    if (!keys || !keys.length) return '';
+    if (keys.length === 1) return keys[0];
+    try {
+      const idxRef = fbDb.ref('aiConfig/geminiKeyRotationIndex');
+      const txResult = await idxRef.transaction((cur) => (((typeof cur === 'number' ? cur : 0) + 1) % 1000000));
+      const idx = (txResult && txResult.committed && txResult.snapshot && typeof txResult.snapshot.val() === 'number')
+        ? txResult.snapshot.val() : Math.floor(Math.random() * keys.length);
+      return keys[idx % keys.length];
+    } catch(e){
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+  }
 
   async function callAiAssistant(userText){
-    const key = (state.aiConfigKey || '').trim();
-    if (!key) throw new Error('کلید Gemini تنظیم نشده');
+    if (!state.aiConfigKeys || !state.aiConfigKeys.length) throw new Error('کلید Gemini تنظیم نشده');
+    const key = await pickNextGeminiKey(state.aiConfigKeys);
+    const model = state.aiConfigModel || DEFAULT_GEMINI_MODEL;
     const context = buildAiContext();
     const history = state.aiChat.messages
       .filter(m => m.role === 'user' || m.role === 'bot' || m.role === 'actions')
@@ -1594,7 +1619,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     ];
     let res;
     try {
-      res = await fetch(AI_ASSISTANT_GEMINI_ENDPOINT, {
+      res = await fetch(geminiEndpointFor(model), {
         method: 'POST',
         headers: {
           'x-goog-api-key': key,
@@ -1965,13 +1990,21 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       </div>
 
       <div class="card" style="margin-bottom:22px">
-        <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">✨ کلید مرکزی هوش مصنوعی (Gemini)</div>
-        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">این کلید فقط این‌جا (پیش تو) ذخیره می‌شه و کاربرها هیچ‌وقت مستقیم نمی‌بینّنش. بخش هوش مصنوعی توی اپ به‌صورت پیش‌فرض برای همه بسته‌ست؛ فقط کاربرهایی که از صفحه‌ی «مدیریت کاربران» مجوز «استفاده از هوش مصنوعی» رو براشون فعال کنی، می‌تونن ازش استفاده کنن — بدون این‌که خودشون هیچ کلیدی وارد کنن. مدل استفاده‌شده ثابته روی <code>gemini-3-flash-preview</code>.</p>
-        <p style="color:var(--wine);font-size:12px;margin:0 0 16px">⚠️ نکته‌ی امنیتی مهم: چون این اپ کاملاً سمت کاربره (بدون سرور واسط)، هر کاربری که بهش مجوز بدی فنی می‌تونه این کلید رو توی تب Network مرورگرش ببینه. برای این‌که کاربرهای بدون مجوز اصلاً نتونن این کلید رو از فایربیس بخونن، باید توی «Realtime Database Rules» فایربیس یه قانون مثل این اضافه کنی (تا فقط کاربرهایی که <code>permissions/UID/canUseAi</code>شون true هست بتونن <code>aiConfig/geminiKey</code> رو بخونن):</p>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">✨ کلیدها و مدل مرکزی هوش مصنوعی (Gemini)</div>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 16px">این کلیدها فقط این‌جا (پیش تو) ذخیره می‌شن و کاربرها هیچ‌وقت مستقیم نمی‌بینّنشون. بخش هوش مصنوعی توی اپ به‌صورت پیش‌فرض برای همه بسته‌ست؛ فقط کاربرهایی که از صفحه‌ی «مدیریت کاربران» مجوز «استفاده از هوش مصنوعی» رو براشون فعال کنی، می‌تونن ازش استفاده کنن — بدون این‌که خودشون هیچ کلیدی وارد کنن. اگه چند کلید اضافه کنی، هر درخواست به‌صورت خودکار و چرخشی (round-robin) بین کلیدها تقسیم می‌شه تا سقف رایگانِ روزانه‌ی همه‌ی کلیدها روی هم جمع بشه. مدل فعال از لیست پایین قابل‌انتخابه.</p>
+        <p style="color:var(--wine);font-size:12px;margin:0 0 16px">⚠️ نکته‌ی امنیتی مهم: چون این اپ کاملاً سمت کاربره (بدون سرور واسط)، هر کاربری که بهش مجوز بدی فنی می‌تونه هرکدوم از این کلیدها رو توی تب Network مرورگرش ببینه — این با چند کلید هم فرقی نمی‌کنه. برای این‌که کاربرهای بدون مجوز اصلاً نتونن کلیدها رو از فایربیس بخونن، باید توی «Realtime Database Rules» فایربیس یه قانون مثل این اضافه کنی (فقط کاربرهایی که <code>permissions/UID/canUseAi</code>شون true هست بتونن <code>aiConfig/geminiKeys</code> و <code>aiConfig/geminiModel</code> رو بخونن، و همه‌شون بتونن روی شمارنده‌ی چرخش کلید بنویسن — اون مسیر فقط یه عدده و هیچ کلیدی توش نیست):</p>
         <pre style="background:var(--panel2);border-radius:8px;padding:10px 12px;font-size:11px;overflow-x:auto;direction:ltr;text-align:left">"aiConfig": {
-  "geminiKey": {
+  "geminiKeys": {
     ".read": "auth != null && root.child('permissions').child(auth.uid).child('canUseAi').val() === true",
     ".write": "auth != null && auth.uid === 'YOUR_ADMIN_UID'"
+  },
+  "geminiModel": {
+    ".read": "auth != null && root.child('permissions').child(auth.uid).child('canUseAi').val() === true",
+    ".write": "auth != null && auth.uid === 'YOUR_ADMIN_UID'"
+  },
+  "geminiKeyRotationIndex": {
+    ".read": "auth != null && root.child('permissions').child(auth.uid).child('canUseAi').val() === true",
+    ".write": "auth != null && root.child('permissions').child(auth.uid).child('canUseAi').val() === true"
   }
 }</pre>
         <div id="aiConfigWrap"><span class="loading-spin"></span></div>
@@ -2083,49 +2116,120 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
   // (تابع attachAiAccessListener) برای دیدن این‌که اپ اصلی چطور ازش استفاده می‌کنه.
   async function loadAiConfig(){
     try {
-      const snap = await fbDb.ref('aiConfig/geminiKey').once('value');
-      state.aiConfigKey = snap.val() || '';
+      const [keysSnap, modelSnap, legacySnap] = await Promise.all([
+        fbDb.ref('aiConfig/geminiKeys').once('value'),
+        fbDb.ref('aiConfig/geminiModel').once('value'),
+        fbDb.ref('aiConfig/geminiKey').once('value'),
+      ]);
+      const rawKeys = keysSnap.val();
+      let keys = Array.isArray(rawKeys) ? rawKeys.filter((k) => k && String(k).trim()) : [];
+      if (!keys.length) {
+        // سازگاری با نسخه‌ی قدیمی که فقط یک کلید تکی داشت
+        const legacy = (legacySnap.val() || '').trim();
+        if (legacy) keys = [legacy];
+      }
+      state.aiConfigKeys = keys;
+      state.aiConfigModel = modelSnap.val() || DEFAULT_GEMINI_MODEL;
       state.aiConfigLoaded = true;
     } catch(e) {
       console.error('loadAiConfig error:', e);
-      state.aiConfigKey = '';
+      state.aiConfigKeys = [];
+      state.aiConfigModel = DEFAULT_GEMINI_MODEL;
     }
+  }
+
+  function maskKey(key){
+    const k = String(key || '');
+    if (k.length <= 8) return k.replace(/./g, '•');
+    return k.slice(0, 4) + '•'.repeat(Math.max(4, k.length - 8)) + k.slice(-4);
   }
 
   function paintAiConfig(){
     const wrap = document.getElementById('aiConfigWrap');
     if (!wrap) return;
-    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
+    const keys = state.aiConfigKeys || [];
+    const hasKey = keys.length > 0;
+    const model = state.aiConfigModel || DEFAULT_GEMINI_MODEL;
     wrap.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px;margin-bottom:14px">
-        <span style="font-size:13px">${hasKey ? 'یک کلید Gemini ذخیره شده' : 'هنوز کلیدی ذخیره نشده'}</span>
+        <span style="font-size:13px">${hasKey ? `${keys.length} کلید Gemini ذخیره شده` : 'هنوز کلیدی ذخیره نشده'}</span>
         <span class="pill ${hasKey ? 'active' : 'banned'}">${hasKey ? icon('check',11) + ' فعال' : icon('ban',11) + ' خالی'}</span>
       </div>
       <div class="mfield-group">
-        <label class="mlabel">کلید Gemini API</label>
-        <div style="display:flex;gap:8px">
-          <input class="mfield" id="aiConfigKeyInput" style="flex:1" type="${state.showAiConfigKey ? 'text' : 'password'}" placeholder="AQ...." value="${esc(state.aiConfigKey)}">
-          <button class="icon-btn" id="aiConfigKeyToggleBtn" title="نمایش/مخفی">${icon(state.showAiConfigKey ? 'ban' : 'check', 14)}</button>
+        <label class="mlabel">مدل Gemini فعال</label>
+        <select class="mfield" id="aiConfigModelSelect">
+          ${AVAILABLE_GEMINI_MODELS.map((m) => `<option value="${esc(m)}" ${m === model ? 'selected' : ''}>${esc(m)}</option>`).join('')}
+        </select>
+        <p style="color:var(--muted);font-size:12px;margin:6px 0 0">همه‌ی کاربرها و خودِ این پنل از همین یک مدل استفاده می‌کنن.</p>
+      </div>
+      <div class="mfield-group">
+        <label class="mlabel">کلیدهای Gemini API (${keys.length})</label>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 10px">هر چند کلید که این‌جا اضافه کنی، درخواست‌ها به‌صورت خودکار (چرخشی) بینشون تقسیم می‌شه تا سقف رایگانِ روزانه‌ی چند کلید روی هم جمع بشه.</p>
+        ${keys.map((k, i) => `
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <input class="mfield" style="flex:1;font-family:monospace" type="text" readonly value="${esc(state.showAiConfigKeys ? k : maskKey(k))}">
+            <button class="icon-btn" data-remove-key-idx="${i}" title="حذف این کلید">${icon('trash',14)}</button>
+          </div>
+        `).join('')}
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <input class="mfield" id="aiConfigNewKeyInput" style="flex:1" type="${state.showAiConfigKeys ? 'text' : 'password'}" placeholder="AQ.... (کلید جدید)" value="${esc(state.aiConfigNewKeyDraft || '')}">
+          <button class="icon-btn" id="aiConfigKeyToggleBtn" title="نمایش/مخفی همه‌ی کلیدها">${icon(state.showAiConfigKeys ? 'ban' : 'check', 14)}</button>
+          <button class="btn-confirm" id="aiConfigAddKeyBtn" style="width:auto;padding:10px 16px">افزودن کلید</button>
         </div>
       </div>
-      <button class="btn-confirm" id="aiConfigSaveBtn" style="width:auto;padding:10px 20px">ذخیره کلید</button>
+      <button class="btn-confirm" id="aiConfigSaveModelBtn" style="width:auto;padding:10px 20px">ذخیره‌ی مدل</button>
     `;
     document.getElementById('aiConfigKeyToggleBtn').addEventListener('click', () => {
-      state.showAiConfigKey = !state.showAiConfigKey;
+      state.showAiConfigKeys = !state.showAiConfigKeys;
       paintAiConfig();
     });
-    document.getElementById('aiConfigSaveBtn').addEventListener('click', saveAiConfigKey);
+    document.getElementById('aiConfigAddKeyBtn').addEventListener('click', addAiConfigKey);
+    document.getElementById('aiConfigSaveModelBtn').addEventListener('click', saveAiConfigModel);
+    wrap.querySelectorAll('[data-remove-key-idx]').forEach((btn) => {
+      btn.addEventListener('click', () => removeAiConfigKey(parseInt(btn.getAttribute('data-remove-key-idx'), 10)));
+    });
   }
 
-  async function saveAiConfigKey(){
-    const el = document.getElementById('aiConfigKeyInput');
-    const key = el ? el.value.trim() : '';
+  async function persistAiConfigKeys(keys){
     try {
-      await fbDb.ref('aiConfig/geminiKey').set(key);
-      state.aiConfigKey = key;
-      toast(key ? 'کلید ذخیره شد' : 'کلید پاک شد', 'ok');
+      await fbDb.ref('aiConfig/geminiKeys').set(keys);
+      // کلید قدیمیِ تکی رو هم پاک می‌کنیم که دیگه به‌عنوان fallback استفاده نشه و گیج‌کننده نباشه
+      await fbDb.ref('aiConfig/geminiKey').remove().catch(() => {});
+      state.aiConfigKeys = keys;
+      return true;
+    } catch(e) {
+      toast('خطا در ذخیره‌سازی کلیدها', 'err');
+      return false;
+    }
+  }
+
+  async function addAiConfigKey(){
+    const el = document.getElementById('aiConfigNewKeyInput');
+    const key = el ? el.value.trim() : '';
+    if (!key) { toast('اول یک کلید وارد کن', 'err'); return; }
+    const keys = [...(state.aiConfigKeys || []), key];
+    state.aiConfigNewKeyDraft = '';
+    const ok = await persistAiConfigKeys(keys);
+    if (ok) toast('کلید اضافه شد', 'ok');
+    paintAiConfig();
+  }
+
+  async function removeAiConfigKey(idx){
+    const keys = (state.aiConfigKeys || []).filter((_, i) => i !== idx);
+    const ok = await persistAiConfigKeys(keys);
+    if (ok) toast('کلید حذف شد', 'ok');
+    paintAiConfig();
+  }
+
+  async function saveAiConfigModel(){
+    const el = document.getElementById('aiConfigModelSelect');
+    const model = el ? el.value : DEFAULT_GEMINI_MODEL;
+    try {
+      await fbDb.ref('aiConfig/geminiModel').set(model);
+      state.aiConfigModel = model;
+      toast('مدل ذخیره شد', 'ok');
       paintAiConfig();
-    } catch(e) { toast('خطا در ذخیره‌سازی کلید', 'err'); }
+    } catch(e) { toast('خطا در ذخیره‌سازی مدل', 'err'); }
   }
 
   async function loadBroadcasts(){
