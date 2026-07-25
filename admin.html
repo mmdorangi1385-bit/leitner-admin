@@ -1160,14 +1160,12 @@
     document.body.appendChild(backdrop);
     const checkbox = backdrop.querySelector('#editCanGroup');
     const track = backdrop.querySelector('#toggleTrackGroup');
-    track.addEventListener('click', () => {
-      checkbox.checked = !checkbox.checked;
+    checkbox.addEventListener('change', () => {
       track.style.background = checkbox.checked ? 'var(--sage-strong)' : 'var(--border2)';
     });
     const aiCheckbox = backdrop.querySelector('#editCanAi');
     const aiTrack = backdrop.querySelector('#toggleTrackAi');
-    aiTrack.addEventListener('click', () => {
-      aiCheckbox.checked = !aiCheckbox.checked;
+    aiCheckbox.addEventListener('change', () => {
       aiTrack.style.background = aiCheckbox.checked ? 'var(--sage-strong)' : 'var(--border2)';
     });
     backdrop.addEventListener('click', () => backdrop.remove());
@@ -1275,7 +1273,7 @@
     }
   }
 
-  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast };
+  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast };
 
   // ===================== Content management =====================
   async function renderContent(){
@@ -1533,12 +1531,17 @@
             <option value="2">۲ ساعت دیگه</option>
             <option value="6">۶ ساعت دیگه</option>
             <option value="24">۲۴ ساعت دیگه</option>
-            <option value="custom">دلخواه (ساعت)</option>
+            <option value="custom">دلخواه (بر حسب ساعت)</option>
+            <option value="exact">تاریخ و ساعت دقیق</option>
           </select>
         </div>
         <div class="mfield-group" id="bcCustomWrap" style="display:none">
           <label class="mlabel">چند ساعت دیگه ارسال شود؟</label>
           <input class="mfield" id="bcCustomHours" type="number" min="0" step="0.5" value="2">
+        </div>
+        <div class="mfield-group" id="bcExactWrap" style="display:none">
+          <label class="mlabel">تاریخ و ساعت دقیق ارسال</label>
+          <input class="mfield" id="bcExactDateTime" type="datetime-local">
         </div>
         <button class="btn-confirm" style="width:auto;padding:10px 20px" id="bcSendBtn">${icon('bell',14)} ارسال</button>
       </div>
@@ -1551,7 +1554,11 @@
 
     document.getElementById('bcDelay').addEventListener('change', (e) => {
       document.getElementById('bcCustomWrap').style.display = e.target.value === 'custom' ? 'block' : 'none';
+      document.getElementById('bcExactWrap').style.display = e.target.value === 'exact' ? 'block' : 'none';
     });
+    // پیش‌فرض فیلد تاریخ/ساعت دقیق: یک ساعت دیگه، با احتساب دقیقه‌ی محلی کاربر
+    const exactDefault = new Date(Date.now() + 3600000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
+    document.getElementById('bcExactDateTime').value = exactDefault;
     document.getElementById('bcSendBtn').addEventListener('click', sendBroadcast);
 
     await loadAppStatus();
@@ -1688,7 +1695,9 @@
             <span class="pill ${pending ? 'open' : 'answered'}">${pending ? 'زمان‌بندی‌شده · ' + fmtDate(b.sendAt) : 'ارسال شده'}</span>
           </div>
           <div style="font-size:13px;line-height:1.8">${esc(b.message || '')}</div>
-          ${pending ? `<div style="margin-top:10px"><button class="btn-small" onclick="__admin.cancelBroadcast('${esc(b.id)}')">${icon('trash',12)} لغو ارسال</button></div>` : ''}
+          <div style="margin-top:10px">
+            <button class="btn-small" onclick="__admin.${pending ? 'cancelBroadcast' : 'deleteBroadcast'}('${esc(b.id)}')">${icon('trash',12)} ${pending ? 'لغو ارسال' : 'حذف برای همه'}</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -1699,18 +1708,27 @@
     const message = msgEl ? msgEl.value.trim() : '';
     if (!message) { toast('متن نوتیفیکیشن نمی‌تونه خالی باشه', 'err'); return; }
     const delaySel = document.getElementById('bcDelay').value;
-    let delayHours = 0;
-    if (delaySel === 'custom') {
-      delayHours = parseFloat(document.getElementById('bcCustomHours').value) || 0;
-    } else {
-      delayHours = parseFloat(delaySel) || 0;
-    }
     const now = Date.now();
-    const sendAt = now + Math.max(0, delayHours) * 3600000;
+    let sendAt;
+    if (delaySel === 'exact') {
+      const raw = document.getElementById('bcExactDateTime').value;
+      if (!raw) { toast('تاریخ و ساعت ارسال رو انتخاب کن', 'err'); return; }
+      sendAt = new Date(raw).getTime();
+      if (isNaN(sendAt)) { toast('تاریخ و ساعت وارد شده معتبر نیست', 'err'); return; }
+      if (sendAt < now) { toast('این زمان قبلاً گذشته؛ یه زمان در آینده انتخاب کن', 'err'); return; }
+    } else {
+      let delayHours = 0;
+      if (delaySel === 'custom') {
+        delayHours = parseFloat(document.getElementById('bcCustomHours').value) || 0;
+      } else {
+        delayHours = parseFloat(delaySel) || 0;
+      }
+      sendAt = now + Math.max(0, delayHours) * 3600000;
+    }
     try {
       const ref = fbDb.ref('broadcastNotifications').push();
       await ref.set({ message, createdAt: now, sendAt, createdBy: state.email || state.uid || null });
-      toast(delayHours > 0 ? 'نوتیفیکیشن زمان‌بندی شد' : 'نوتیفیکیشن ارسال شد', 'ok');
+      toast(sendAt > now ? 'نوتیفیکیشن زمان‌بندی شد' : 'نوتیفیکیشن ارسال شد', 'ok');
       msgEl.value = '';
       await loadBroadcasts();
       paintBroadcastList();
@@ -1725,6 +1743,16 @@
       toast('لغو شد', 'ok');
       paintBroadcastList();
     } catch(e) { toast('خطا در لغو', 'err'); }
+  }
+
+  async function deleteBroadcast(id){
+    if (!confirm('این نوتیفیکیشن حذف بشه؟ چون همه‌ی کاربرها مستقیم از همین مسیر می‌خوننش، برای اونا هم دیگه توی لیست نوتیفیکیشن‌های داخل اپ نمایش داده نمی‌شه (نوتیفیکیشنی که قبلاً به‌صورت pop-up روی گوشی‌شون نشون داده شده، از همون‌جا پاک نمی‌شه — این حذف فقط کارت داخل اپ رو برمی‌داره).')) return;
+    try {
+      await fbDb.ref('broadcastNotifications/' + id).remove();
+      state.broadcasts = state.broadcasts.filter(b => b.id !== id);
+      toast('حذف شد', 'ok');
+      paintBroadcastList();
+    } catch(e) { toast('خطا در حذف', 'err'); }
   }
 
   if ('serviceWorker' in navigator) {
