@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>پنل مدیریت · جعبه لایتنر</title>
 <link rel="icon" href="icon-hero.png">
+<link rel="manifest" href="manifest-admin.json">
+<link rel="apple-touch-icon" href="icon-hero.png">
+<meta name="theme-color" content="#14161f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="پنل مدیریت">
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
@@ -288,6 +295,38 @@
   .toast.err { border-color: rgba(182,92,92,0.4); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
 
+  /* ---------- AI Assistant chat ---------- */
+  .ai-chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 150px); max-height: 720px; }
+  .ai-chat-log { flex: 1; overflow-y: auto; padding: 4px 2px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .ai-msg { max-width: 82%; padding: 11px 14px; border-radius: 13px; font-size: 13px; line-height: 1.85; white-space: pre-wrap; }
+  .ai-msg.user { align-self: flex-end; background: var(--brass); color: #1a1710; border-bottom-left-radius: 4px; font-weight: 500; }
+  .ai-msg.bot { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); border-bottom-right-radius: 4px; }
+  .ai-msg.bot.err { border-color: rgba(182,92,92,0.4); color: #e0a3a3; }
+  .ai-action-card { align-self: flex-start; max-width: 92%; width: 100%; background: var(--panel); border: 1px solid var(--border2); border-radius: 13px; padding: 14px 16px; }
+  .ai-action-card .aic-summary { font-size: 13px; line-height: 1.8; margin-bottom: 12px; }
+  .ai-action-item { display: flex; align-items: center; gap: 10px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; margin-bottom: 7px; font-size: 12.5px; }
+  .ai-action-item:last-child { margin-bottom: 0; }
+  .ai-action-item .aic-num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--brass-glow); color: var(--brass); font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; }
+  .ai-action-item .aic-label { color: var(--muted); font-size: 10.5px; flex-shrink: 0; }
+  .ai-action-item .aic-target { font-weight: 600; }
+  .ai-action-item .aic-detail { color: var(--muted); font-size: 11.5px; margin-inline-start: auto; }
+  .ai-action-item.aic-failed { border-color: rgba(182,92,92,0.4); }
+  .ai-action-item .aic-status { flex-shrink: 0; }
+  .ai-actions-footer { display: flex; gap: 10px; margin-top: 14px; }
+  .ai-chat-inputbar { display: flex; gap: 9px; padding-top: 12px; border-top: 1px solid var(--divider); }
+  .ai-chat-inputbar textarea { flex: 1; resize: none; min-height: 46px; max-height: 130px; }
+  .ai-send-btn { flex-shrink: 0; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: var(--brass); color: #1a1710; border: none; border-radius: 11px; transition: filter 0.15s; }
+  .ai-send-btn:hover { filter: brightness(1.08); }
+  .ai-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ai-send-btn svg { width: 18px; height: 18px; }
+  .ai-no-key { text-align: center; padding: 50px 18px; color: var(--muted); }
+  .ai-no-key svg { width: 40px; height: 40px; opacity: 0.35; margin-bottom: 14px; }
+  .ai-typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .ai-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: aiTyping 1.1s infinite ease-in-out; }
+  .ai-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .ai-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes aiTyping { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
   .tab-strip { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--divider); overflow-x: auto; }
   .tab-strip button {
     background: none; border: none; color: var(--muted); font-size: 12.5px; padding: 8px 3px; margin-inline-end: 15px;
@@ -492,6 +531,8 @@
     mic: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
     moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+    sparkles: '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M5 16l0.8 2.2L8 19l-2.2 0.8L5 22l-0.8-2.2L2 19l2.2-0.8L5 16z"/><path d="M19 15l0.7 1.9L21.6 17.6l-1.9 0.7L19 20.2l-0.7-1.9L16.4 17.6l1.9-0.7L19 15z"/>',
+    send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
   };
   function icon(name, size){
     size = size || 16;
@@ -535,6 +576,7 @@
     contentOverrides: null,
     appStatus: { closed: false, message: '' }, appStatusLoaded: false,
     broadcasts: [], broadcastsLoaded: false,
+    aiChat: { messages: [], busy: false, pendingActions: null },
   };
 
   // ===================== Auth =====================
@@ -608,6 +650,7 @@
     { id: 'users', label: 'مدیریت کاربران', icon: 'users' },
     { id: 'content', label: 'مدیریت محتوا', icon: 'content' },
     { id: 'broadcast', label: 'اطلاع‌رسانی و وضعیت برنامه', icon: 'bell' },
+    { id: 'assistant', label: 'دستیار هوشمند', icon: 'sparkles' },
   ];
 
   function initShell(){
@@ -635,6 +678,7 @@
     else if (view === 'users') renderUsers();
     else if (view === 'content') renderContent();
     else if (view === 'broadcast') renderBroadcast();
+    else if (view === 'assistant') renderAssistant();
   }
 
   // ===================== Dashboard =====================
@@ -1273,7 +1317,408 @@
     }
   }
 
-  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast };
+  // ===================== دستیار هوشمند (چت فارسی → JSON Action) =====================
+  const AI_ASSISTANT_SYSTEM_PROMPT = `شما یک دستیار هوشمند، دقیق و قدرتمند برای مدیریت «پنل مدیریت جعبه لایتنر» هستید. وظیفه شما دریافت دستورات متنی مدیر، تحلیل درخواست، و خروجی دادن به‌صورت JSON ساختاریافته است تا پنل بتواند عملیات را روی فایربیس اجرا کند.
+
+قوانین حیاتی خروجی:
+- خروجی شما فقط و فقط یک آبجکت JSON خام است. هیچ متن، توضیح، یا Markdown دور آن نباشد (بدون \`\`\`json).
+- ساختار خروجی همیشه این شکل است:
+{
+  "reply": "پاسخ کوتاه و طبیعی فارسی به مدیر (همیشه پر می‌شود)",
+  "actions": [ ...لیست صفر یا چند اکشن... ]
+}
+- اگر درخواست، اجرایی نیست (سوال آماری، گزارش، سلام و احوالپرسی، یا هرچیزی که اکشن روی دیتابیس نیاز ندارد)، آرایه‌ی actions را خالی [] بگذارید و فقط reply را پر کنید.
+- اگر درخواست شامل چند نفر یا چند مورد است (مثلاً "این ۱۰ کاربر رو مسدود کن")، برای هرکدام یک آبجکت اکشن جداگانه در آرایه actions بسازید — هرگز چند نفر را در یک اکشن ادغام نکنید.
+- برای هر اکشن، uid کاربر را از روی لیست کاربران داده‌شده (طبق نام یا آیدی کاربری که ذکر شده) پیدا کنید. اگر کاربری با آن نام/آیدی پیدا نشد، آن مورد را در actions نگذارید و در reply توضیح بدهید کدام مورد پیدا نشد.
+- هرگز uid را حدس نزنید یا از پیش خودتان نسازید؛ فقط از لیست کاربران داده‌شده استفاده کنید.
+
+انواع مجاز action.type و پارامترهای هرکدام:
+1. BAN_USER: { type, uid, displayLabel, banType: "permanent"|"1"|"7"|"30", reason }
+2. UNBAN_USER: { type, uid, displayLabel }
+3. UPDATE_USER_PERMISSIONS: { type, uid, displayLabel, canCreateGroups?, canUseAi?, userIdMaxChanges? } — فقط فیلدهایی که کاربر گفته را بگذارید
+4. GRANT_XP_BONUS: { type, uid, displayLabel, amount } — amount عدد است (جایگزین بونوس فعلی می‌شود مگر گفته شود «اضافه کن» که باید مقدار جدید را خودتان جمع بزنید چون مقدار فعلی هر کاربر در لیست داده شده)
+5. UPDATE_USER_NAME: { type, uid, displayLabel, newName }
+6. REPLY_TICKET: { type, ticketId, displayLabel, replyText }
+7. SET_TICKET_STATUS: { type, ticketId, displayLabel, status: "open"|"closed" }
+8. DELETE_TICKET: { type, ticketId, displayLabel }
+9. CREATE_BROADCAST: { type, message, sendAtTimestamp, displayLabel } — sendAtTimestamp میلی‌ثانیه یونیکس؛ اگر «همین الان» بود از زمان فعلی داده‌شده استفاده کنید
+10. CANCEL_BROADCAST: { type, broadcastId, displayLabel }
+11. SET_APP_STATUS: { type, closed: true|false, message, displayLabel }
+
+displayLabel همیشه یک توضیح کوتاه فارسی از خودِ همان مورد است (مثلاً نام کاربر یا خلاصه‌ی پیام)، برای نمایش در چک‌لیست تاییدیه.
+فقط از context دقیق داده‌شده (لیست کاربران/تیکت‌ها/broadcastها/زمان فعلی) استفاده کنید؛ چیزی نسازید و حدس نزنید.`;
+
+  function buildAiContext(){
+    const now = Date.now();
+    const usersBrief = (state.users || []).slice(0, 400).map(u => {
+      const bonus = (state.userXpBonusCache && state.userXpBonusCache[u.uid]) || 0;
+      const ban = state.bans ? state.bans[u.uid] : null;
+      const isBanned = !!(ban && (!ban.until || ban.until > now));
+      return {
+        uid: u.uid, name: u.name || null, userId: u.userId || null,
+        xp: (u.xp || 0) + bonus, adminXpBonus: bonus, banned: isBanned,
+        canCreateGroups: !!(state.permissions && state.permissions[u.uid]),
+        canUseAi: !!(state.aiPermissions && state.aiPermissions[u.uid]),
+      };
+    });
+    const ticketsBrief = (state.tickets || []).slice(0, 100).map(t => ({
+      id: t.id, username: t.username || null, status: t.status || 'open',
+      category: t.category || null, message: (t.message || '').slice(0, 200),
+    }));
+    const broadcastsBrief = (state.broadcasts || []).slice(0, 30).map(b => ({
+      id: b.id, message: (b.message || '').slice(0, 150), sendAt: b.sendAt || null, pending: (b.sendAt || 0) > now,
+    }));
+    return {
+      nowTimestamp: now,
+      nowReadable: new Date(now).toLocaleString('fa-IR', { dateStyle: 'full', timeStyle: 'short' }),
+      appStatus: state.appStatus,
+      users: usersBrief,
+      tickets: ticketsBrief,
+      broadcasts: broadcastsBrief,
+    };
+  }
+
+  async function ensureAiContextLoaded(){
+    const tasks = [];
+    if (!state.usersLoaded) tasks.push(renderUsersDataOnly());
+    if (!state.ticketsLoaded) tasks.push(loadTicketsDataOnly());
+    if (!state.broadcastsLoaded) tasks.push(loadBroadcasts());
+    if (!state.appStatusLoaded) tasks.push(loadAppStatus());
+    if (tasks.length) await Promise.all(tasks);
+  }
+
+  // نسخه‌ی سبک از بارگذاری کاربران/تیکت‌ها بدون نیاز به وجود المان‌های DOM صفحات دیگر
+  async function renderUsersDataOnly(){
+    try {
+      const [leaderSnap, bansSnap, permsSnap, usersSnap] = await Promise.all([
+        fbDb.ref('leaderboard').once('value'),
+        fbDb.ref('bans').once('value'),
+        fbDb.ref('permissions').once('value'),
+        fbDb.ref('users').once('value'),
+      ]);
+      const leaderVal = leaderSnap.val() || {};
+      const usersVal = usersSnap.val() || {};
+      state.bans = bansSnap.val() || {};
+      state.permissions = {}; state.aiPermissions = {}; state.userIdMaxChangesCache = {};
+      const permsVal = permsSnap.val() || {};
+      Object.keys(permsVal).forEach(uid => {
+        state.permissions[uid] = !!(permsVal[uid] && permsVal[uid].canCreateGroups);
+        state.aiPermissions[uid] = !!(permsVal[uid] && permsVal[uid].canUseAi);
+        if (permsVal[uid] && typeof permsVal[uid].userIdMaxChanges === 'number') {
+          state.userIdMaxChangesCache[uid] = permsVal[uid].userIdMaxChanges;
+        }
+      });
+      state.userXpBonusCache = {};
+      Object.keys(usersVal).forEach(uid => { state.userXpBonusCache[uid] = usersVal[uid].adminXpBonus || 0; });
+      state.users = Object.keys(leaderVal).map(uid => ({ uid, ...leaderVal[uid] })).sort((a,b) => (b.xp||0) - (a.xp||0));
+      state.usersLoaded = true;
+    } catch(e) { console.error('renderUsersDataOnly error:', e); state.users = []; }
+  }
+
+  async function loadTicketsDataOnly(){
+    try {
+      const snap = await fbDb.ref('supportTickets').orderByChild('createdAt').limitToLast(300).once('value');
+      const val = snap.val() || {};
+      state.tickets = Object.keys(val).map(id => ({ id, ...val[id] })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+      state.ticketsLoaded = true;
+    } catch(e) { console.error('loadTicketsDataOnly error:', e); state.tickets = []; }
+  }
+
+  async function loadAppStatus(){
+    try {
+      const snap = await fbDb.ref('appStatus').once('value');
+      const val = snap.val() || {};
+      state.appStatus = { closed: !!val.closed, message: val.message || DEFAULT_MAINTENANCE_MSG };
+      state.appStatusLoaded = true;
+    } catch(e) {
+      state.appStatus = { closed: false, message: DEFAULT_MAINTENANCE_MSG };
+    }
+  }
+
+  async function renderAssistant(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>${icon('sparkles',16)} دستیار هوشمند</h2>
+        <p>دستور بده به زبان فارسی؛ دستیار عملیات رو تشخیص می‌ده و بعد از تاییدت اجرا می‌کنه</p>
+      </div>
+      <div id="aiAssistantBody"></div>
+    `;
+    await ensureAiContextLoaded();
+    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
+    if (!state.aiConfigLoaded) await loadAiConfig();
+    paintAssistantBody();
+  }
+
+  function paintAssistantBody(){
+    const body = document.getElementById('aiAssistantBody');
+    if (!body) return;
+    const hasKey = !!(state.aiConfigKey && state.aiConfigKey.trim());
+    if (!hasKey) {
+      body.innerHTML = `
+        <div class="card ai-no-key">
+          ${icon('sparkles', 40)}
+          <p>هنوز کلید Gemini توی «اطلاع‌رسانی و وضعیت برنامه» ذخیره نشده.<br>برای فعال‌سازی دستیار، اول یک کلید API معتبر ذخیره کن.</p>
+        </div>
+      `;
+      return;
+    }
+    body.innerHTML = `
+      <div class="card ai-chat-wrap" style="padding:16px">
+        <div class="ai-chat-log" id="aiChatLog"></div>
+        <div class="ai-chat-inputbar">
+          <textarea class="ta" id="aiChatInput" placeholder="مثلاً: کاربر علی رو ۷ روز به‌خاطر فحاشی مسدود کن" rows="1"></textarea>
+          <button class="ai-send-btn" id="aiChatSendBtn" title="ارسال">${icon('send',18)}</button>
+        </div>
+      </div>
+    `;
+    const log = document.getElementById('aiChatLog');
+    const input = document.getElementById('aiChatInput');
+    const sendBtn = document.getElementById('aiChatSendBtn');
+
+    function paintLog(){
+      log.innerHTML = state.aiChat.messages.map((m, idx) => {
+        if (m.role === 'user') return `<div class="ai-msg user">${esc(m.text)}</div>`;
+        if (m.role === 'error') return `<div class="ai-msg bot err">${esc(m.text)}</div>`;
+        if (m.role === 'typing') return `<div class="ai-msg bot"><span class="ai-typing"><span></span><span></span><span></span></span></div>`;
+        if (m.role === 'actions') return renderActionCard(m, idx);
+        return `<div class="ai-msg bot">${esc(m.text)}</div>`;
+      }).join('');
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderActionCard(m, idx){
+      if (m.executed) {
+        return `
+          <div class="ai-action-card">
+            <div class="aic-summary">${esc(m.text)}</div>
+            ${m.actions.map((a, i) => `
+              <div class="ai-action-item ${a.__error ? 'aic-failed' : ''}">
+                <span class="aic-num">${faNum(i+1)}</span>
+                <span class="aic-target">${esc(a.displayLabel || a.uid || a.ticketId || '')}</span>
+                <span class="aic-detail">${esc(actionTypeFa(a.type))}</span>
+                <span class="aic-status">${a.__error ? icon('ban',14) : icon('check',14)}</span>
+              </div>
+            `).join('')}
+            <div style="margin-top:10px;font-size:11.5px;color:var(--muted)">${m.hasError ? 'برخی موارد با خطا مواجه شدند.' : 'همه‌ی موارد با موفقیت اجرا شدند.'}</div>
+          </div>
+        `;
+      }
+      return `
+        <div class="ai-action-card">
+          <div class="aic-summary">${esc(m.text)}</div>
+          ${m.actions.map((a, i) => `
+            <div class="ai-action-item">
+              <span class="aic-num">${faNum(i+1)}</span>
+              <span class="aic-target">${esc(a.displayLabel || a.uid || a.ticketId || '')}</span>
+              <span class="aic-detail">${esc(actionTypeFa(a.type))}</span>
+            </div>
+          `).join('')}
+          <div class="ai-actions-footer">
+            <button class="btn-secondary" onclick="__admin.cancelAiActions(${idx})">انصراف</button>
+            <button class="btn-confirm" onclick="__admin.confirmAiActions(${idx})">تایید و اجرا (${faNum(m.actions.length)} مورد)</button>
+          </div>
+        </div>
+      `;
+    }
+    window.__aiPaintLog = paintLog;
+
+    function autoGrow(){
+      input.style.height = 'auto';
+      input.style.height = Math.min(130, input.scrollHeight) + 'px';
+    }
+    input.addEventListener('input', autoGrow);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    });
+    sendBtn.addEventListener('click', handleSend);
+
+    async function handleSend(){
+      const text = input.value.trim();
+      if (!text || state.aiChat.busy) return;
+      input.value = '';
+      autoGrow();
+      state.aiChat.messages.push({ role: 'user', text });
+      state.aiChat.messages.push({ role: 'typing' });
+      state.aiChat.busy = true;
+      sendBtn.disabled = true;
+      paintLog();
+      try {
+        const result = await callAiAssistant(text);
+        state.aiChat.messages.pop(); // remove typing
+        if (result.actions && result.actions.length > 0) {
+          state.aiChat.messages.push({ role: 'actions', text: result.reply, actions: result.actions, executed: false });
+        } else {
+          state.aiChat.messages.push({ role: 'bot', text: result.reply || 'متوجه نشدم، می‌شه واضح‌تر بگی؟' });
+        }
+      } catch(e) {
+        console.error('AI assistant error:', e);
+        state.aiChat.messages.pop(); // remove typing
+        state.aiChat.messages.push({ role: 'error', text: 'خطا در ارتباط با دستیار: ' + (e && e.message ? e.message : 'نامشخص') });
+      }
+      state.aiChat.busy = false;
+      sendBtn.disabled = false;
+      paintLog();
+    }
+
+    paintLog();
+  }
+
+  function actionTypeFa(type){
+    const map = {
+      BAN_USER: 'مسدودسازی', UNBAN_USER: 'رفع مسدودی', UPDATE_USER_PERMISSIONS: 'تغییر مجوز',
+      GRANT_XP_BONUS: 'امتیاز جایزه', UPDATE_USER_NAME: 'تغییر نام', REPLY_TICKET: 'پاسخ تیکت',
+      SET_TICKET_STATUS: 'تغییر وضعیت تیکت', DELETE_TICKET: 'حذف تیکت', CREATE_BROADCAST: 'نوتیفیکیشن جدید',
+      CANCEL_BROADCAST: 'لغو نوتیفیکیشن', SET_APP_STATUS: 'وضعیت برنامه',
+    };
+    return map[type] || type;
+  }
+
+  async function callAiAssistant(userText){
+    const key = (state.aiConfigKey || '').trim();
+    if (!key) throw new Error('کلید Gemini تنظیم نشده');
+    const context = buildAiContext();
+    const history = state.aiChat.messages
+      .filter(m => m.role === 'user' || m.role === 'bot' || m.role === 'actions')
+      .slice(-10)
+      .map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.role === 'user' ? m.text : JSON.stringify({ reply: m.text, actions: m.actions || [] }) }],
+      }));
+    const contents = [
+      ...history,
+      { role: 'user', parts: [{ text: 'اطلاعات فعلی سیستم (context):\n' + JSON.stringify(context) + '\n\nدستور مدیر:\n' + userText }] },
+    ];
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: AI_ASSISTANT_SYSTEM_PROMPT }] },
+        contents,
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error('پاسخ ناموفق از سرویس هوش مصنوعی (' + res.status + ')');
+    }
+    const data = await res.json();
+    const textOut = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+      data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!textOut) throw new Error('پاسخ خالی از سرویس هوش مصنوعی');
+    let parsed;
+    try { parsed = JSON.parse(textOut); } catch(e) { throw new Error('خروجی دستیار قابل تفسیر نبود'); }
+    const reply = (parsed && parsed.reply) || '';
+    let actions = Array.isArray(parsed && parsed.actions) ? parsed.actions : [];
+    // فقط اکشن‌هایی که uid/ticketId معتبرشون توی context واقعاً وجود داره رو نگه می‌داریم (ضدِ هالوسینیشن)
+    const validUids = new Set(context.users.map(u => u.uid));
+    const validTicketIds = new Set(context.tickets.map(t => t.id));
+    const validBroadcastIds = new Set(context.broadcasts.map(b => b.id));
+    actions = actions.filter(a => {
+      if (!a || !a.type) return false;
+      if (['BAN_USER','UNBAN_USER','UPDATE_USER_PERMISSIONS','GRANT_XP_BONUS','UPDATE_USER_NAME'].includes(a.type)) return validUids.has(a.uid);
+      if (['REPLY_TICKET','SET_TICKET_STATUS','DELETE_TICKET'].includes(a.type)) return validTicketIds.has(a.ticketId);
+      if (a.type === 'CANCEL_BROADCAST') return validBroadcastIds.has(a.broadcastId);
+      if (a.type === 'CREATE_BROADCAST' || a.type === 'SET_APP_STATUS') return true;
+      return false;
+    });
+    return { reply, actions };
+  }
+
+  async function cancelAiActions(idx){
+    const m = state.aiChat.messages[idx];
+    if (!m) return;
+    state.aiChat.messages[idx] = { role: 'bot', text: 'باشه، لغو شد. اگه چیز دیگه‌ای لازم داری بگو.' };
+    if (window.__aiPaintLog) window.__aiPaintLog();
+  }
+
+  async function confirmAiActions(idx){
+    const m = state.aiChat.messages[idx];
+    if (!m || m.executed) return;
+    for (const a of m.actions) {
+      try {
+        await executeAiAction(a);
+      } catch(e) {
+        console.error('executeAiAction error:', a, e);
+        a.__error = true;
+      }
+    }
+    m.executed = true;
+    m.hasError = m.actions.some(a => a.__error);
+    toast(m.hasError ? 'برخی عملیات با خطا مواجه شدند' : 'همه‌ی عملیات با موفقیت اجرا شد', m.hasError ? 'err' : 'ok');
+    if (window.__aiPaintLog) window.__aiPaintLog();
+    // رفرش کش‌های محلی مرتبط تا صفحات دیگه هم به‌روز باشن
+    state.usersLoaded = false; state.ticketsLoaded = false; state.broadcastsLoaded = false; state.appStatusLoaded = false;
+  }
+
+  async function executeAiAction(a){
+    switch (a.type) {
+      case 'BAN_USER': {
+        const type = a.banType || 'permanent';
+        const until = type === 'permanent' ? null : Date.now() + (parseInt(type, 10) || 0) * 86400000;
+        await fbDb.ref('bans/' + a.uid).set({ until, reason: a.reason || null, bannedAt: Date.now() });
+        state.bans[a.uid] = { until, reason: a.reason || null, bannedAt: Date.now() };
+        return;
+      }
+      case 'UNBAN_USER': {
+        await fbDb.ref('bans/' + a.uid).remove();
+        delete state.bans[a.uid];
+        return;
+      }
+      case 'UPDATE_USER_PERMISSIONS': {
+        const updates = {};
+        if (typeof a.canCreateGroups === 'boolean') updates.canCreateGroups = a.canCreateGroups;
+        if (typeof a.canUseAi === 'boolean') updates.canUseAi = a.canUseAi;
+        if (typeof a.userIdMaxChanges === 'number') updates.userIdMaxChanges = a.userIdMaxChanges;
+        if (Object.keys(updates).length) await fbDb.ref('permissions/' + a.uid).update(updates);
+        return;
+      }
+      case 'GRANT_XP_BONUS': {
+        const amount = typeof a.amount === 'number' ? a.amount : parseInt(a.amount, 10) || 0;
+        await fbDb.ref('users/' + a.uid + '/adminXpBonus').set(amount);
+        if (!state.userXpBonusCache) state.userXpBonusCache = {};
+        state.userXpBonusCache[a.uid] = amount;
+        return;
+      }
+      case 'UPDATE_USER_NAME': {
+        if (!a.newName) return;
+        await fbDb.ref('leaderboard/' + a.uid).update({ name: a.newName });
+        return;
+      }
+      case 'REPLY_TICKET': {
+        if (!a.replyText) return;
+        await fbDb.ref('supportTickets/' + a.ticketId).update({ adminReply: a.replyText, status: 'answered', updatedAt: Date.now() });
+        return;
+      }
+      case 'SET_TICKET_STATUS': {
+        await fbDb.ref('supportTickets/' + a.ticketId).update({ status: a.status, updatedAt: Date.now() });
+        return;
+      }
+      case 'DELETE_TICKET': {
+        await fbDb.ref('supportTickets/' + a.ticketId).remove();
+        return;
+      }
+      case 'CREATE_BROADCAST': {
+        const sendAt = typeof a.sendAtTimestamp === 'number' ? a.sendAtTimestamp : Date.now();
+        const ref = fbDb.ref('broadcastNotifications').push();
+        await ref.set({ message: a.message || '', createdAt: Date.now(), sendAt, createdBy: state.email || state.uid || null });
+        return;
+      }
+      case 'CANCEL_BROADCAST': {
+        await fbDb.ref('broadcastNotifications/' + a.broadcastId).remove();
+        return;
+      }
+      case 'SET_APP_STATUS': {
+        await fbDb.ref('appStatus').set({ closed: !!a.closed, message: a.message || DEFAULT_MAINTENANCE_MSG, updatedAt: Date.now() });
+        state.appStatus = { closed: !!a.closed, message: a.message || DEFAULT_MAINTENANCE_MSG };
+        return;
+      }
+      default:
+        throw new Error('نوع اکشن ناشناخته: ' + a.type);
+    }
+  }
+
+  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast, confirmAiActions, cancelAiActions };
 
   // ===================== Content management =====================
   async function renderContent(){
