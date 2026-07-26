@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -449,6 +450,7 @@
   firebase.initializeApp(firebaseConfig);
   const fbAuth = firebase.auth();
   const fbDb = firebase.database();
+  const fbStorage = firebase.storage();
 
   // ===================== Admin allow-list =====================
   // فقط UIDهای زیر اجازه‌ی ورود به پنل مدیریت رو دارن. بعد از ساختن حساب مدیر با ایمیل/رمز از
@@ -533,6 +535,14 @@
     moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
     sparkles: '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M5 16l0.8 2.2L8 19l-2.2 0.8L5 22l-0.8-2.2L2 19l2.2-0.8L5 16z"/><path d="M19 15l0.7 1.9L21.6 17.6l-1.9 0.7L19 20.2l-0.7-1.9L16.4 17.6l1.9-0.7L19 15z"/>',
     send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    market: '<path d="M3 9l1.5-5.5A1 1 0 0 1 5.46 3h13.08a1 1 0 0 1 .96 1.5L21 9"/><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><path d="M8 13a2 2 0 0 0 4 0M12 13a2 2 0 0 0 4 0"/>',
+    tag: '<path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .58 1.42l9.59 9.58a2 2 0 0 0 2.83 0l4.59-4.58a2 2 0 0 0 0-2.82z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>',
+    coin: '<circle cx="12" cy="12" r="9"/><path d="M9.5 15.2c.5.6 1.4 1 2.5 1 1.7 0 3-.9 3-2s-1.3-1.6-3-2-3-.9-3-2 1.3-2 3-2c1.1 0 2 .4 2.5 1"/><line x1="12" y1="6.2" x2="12" y2="17.8"/>',
+    percent: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    crown: '<path d="M3 8l4 3 5-6 5 6 4-3-2 11H5L3 8z"/><path d="M5 19h14"/>',
+    upload: '<path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+    star: '<path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21 7.5 13.5 2 9h7z"/>',
   };
   function icon(name, size){
     size = size || 16;
@@ -570,12 +580,16 @@
     dashboard: { totalUsers: null, presence: {}, presenceUsers: {} },
     tickets: [], ticketsLoaded: false, ticketFilter: 'all',
     users: [], usersLoaded: false, userSearch: '',
+    userWalletCache: {},
     bans: {}, permissions: {}, aiPermissions: {},
     aiConfigKeys: [], aiConfigModel: '', aiConfigLoaded: false, showAiConfigKeys: false, aiConfigNewKeyDraft: '',
     contentLang: 'de', contentLevel: 'A1', contentWords: [], contentLoading: false, contentSearch: '',
     contentOverrides: null,
     appStatus: { closed: false, message: '' }, appStatusLoaded: false,
     broadcasts: [], broadcastsLoaded: false,
+    marketTab: 'items',
+    marketItems: [], marketCategories: [], marketTags: [], marketPlans: [], marketLoaded: false,
+    marketSearch: '', marketCategoryFilter: 'all',
     aiChat: { messages: [], busy: false, pendingActions: null },
   };
 
@@ -649,6 +663,7 @@
     { id: 'support', label: 'تیکت‌های پشتیبانی', icon: 'support', badgeKey: 'openTickets' },
     { id: 'users', label: 'مدیریت کاربران', icon: 'users' },
     { id: 'content', label: 'مدیریت محتوا', icon: 'content' },
+    { id: 'market', label: 'مارکت', icon: 'market' },
     { id: 'broadcast', label: 'اطلاع‌رسانی و وضعیت برنامه', icon: 'bell' },
     { id: 'assistant', label: 'دستیار هوشمند', icon: 'sparkles' },
   ];
@@ -677,6 +692,7 @@
     else if (view === 'support') renderSupport();
     else if (view === 'users') renderUsers();
     else if (view === 'content') renderContent();
+    else if (view === 'market') renderMarket();
     else if (view === 'broadcast') renderBroadcast();
     else if (view === 'assistant') renderAssistant();
   }
@@ -1159,6 +1175,7 @@
     const u = state.users.find(x => x.uid === uid);
     if (!u) return;
     const bonus = (state.userXpBonusCache && state.userXpBonusCache[uid]) || 0;
+    const coins = (state.userWalletCache && state.userWalletCache[uid]) || 0;
     const canGroup = !!state.permissions[uid];
     const canAi = !!state.aiPermissions[uid];
     const maxIdChanges = (state.userIdMaxChangesCache && typeof state.userIdMaxChangesCache[uid] === 'number')
@@ -1176,6 +1193,10 @@
         <div class="mfield-group">
           <label class="mlabel">امتیاز جایزه (به XP واقعی کاربر اضافه می‌شود)</label>
           <input class="mfield" id="editXpBonus" type="number" value="${bonus}">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">${icon('coin',12)} موجودی کیف‌پول (سکه)</label>
+          <input class="mfield" id="editWalletCoins" type="number" min="0" value="${coins}">
         </div>
         <div class="mfield-group">
           <label class="mlabel">تعداد دفعات مجاز تغییر آیدی (پیش‌فرض اپ: ${faNum(DEFAULT_USER_ID_MAX_CHANGES)})</label>
@@ -1217,21 +1238,34 @@
     backdrop.querySelector('#editSaveBtn').addEventListener('click', async () => {
       const newName = backdrop.querySelector('#editName').value.trim();
       const newBonus = parseInt(backdrop.querySelector('#editXpBonus').value, 10) || 0;
+      const newCoins = parseInt(backdrop.querySelector('#editWalletCoins').value, 10);
+      const coinsChanged = !isNaN(newCoins) && newCoins !== coins;
       const newCanGroup = checkbox.checked;
       const newCanAi = aiCheckbox.checked;
       let newMaxIdChanges = parseInt(backdrop.querySelector('#editIdMaxChanges').value, 10);
       if (isNaN(newMaxIdChanges) || newMaxIdChanges < 0) newMaxIdChanges = DEFAULT_USER_ID_MAX_CHANGES;
       try {
-        await Promise.all([
+        const writes = [
           fbDb.ref('leaderboard/' + uid).update({ name: newName || u.name || 'کاربر' }),
           fbDb.ref('users/' + uid + '/adminXpBonus').set(newBonus),
           fbDb.ref('permissions/' + uid + '/canCreateGroups').set(newCanGroup),
           fbDb.ref('permissions/' + uid + '/canUseAi').set(newCanAi),
           fbDb.ref('permissions/' + uid + '/userIdMaxChanges').set(newMaxIdChanges),
-        ]);
+        ];
+        if (coinsChanged) {
+          writes.push(fbDb.ref('users/' + uid + '/wallet').update({ coins: Math.max(0, newCoins), lastUpdated: Date.now() }));
+          writes.push(fbDb.ref('users/' + uid + '/walletHistory').push({
+            type: newCoins > coins ? 'earn' : 'spend', amount: newCoins - coins, reason: 'admin_adjustment', at: Date.now(),
+          }));
+        }
+        await Promise.all(writes);
         u.name = newName || u.name;
         if (!state.userXpBonusCache) state.userXpBonusCache = {};
         state.userXpBonusCache[uid] = newBonus;
+        if (coinsChanged) {
+          if (!state.userWalletCache) state.userWalletCache = {};
+          state.userWalletCache[uid] = Math.max(0, newCoins);
+        }
         state.permissions[uid] = newCanGroup;
         if (!state.aiPermissions) state.aiPermissions = {};
         state.aiPermissions[uid] = newCanAi;
@@ -1344,6 +1378,23 @@
 9. CREATE_BROADCAST: { type, message, sendAtTimestamp, displayLabel } — sendAtTimestamp میلی‌ثانیه یونیکس؛ اگر «همین الان» بود از زمان فعلی داده‌شده استفاده کنید
 10. CANCEL_BROADCAST: { type, broadcastId, displayLabel }
 11. SET_APP_STATUS: { type, closed: true|false, message, displayLabel }
+12. UPDATE_ITEM_PRICE: { type, itemId, displayLabel, coinPrice?, cashPrice? } — قیمت آیتم مارکت را تغییر می‌دهد؛ فقط فیلدهای گفته‌شده را بگذارید
+13. APPLY_DISCOUNT: { type, itemId, displayLabel, kind: "percent"|"amount", value, startAtTimestamp?, endAtTimestamp? } — اگر زمان گفته نشد، startAtTimestamp را زمان فعلی بگذارید و endAtTimestamp را خالی/نال
+14. REMOVE_DISCOUNT: { type, itemId, displayLabel }
+15. SCHEDULE_ITEM_PUBLISH: { type, itemId, displayLabel, publishAtTimestamp } — زمان‌بندی انتشار محصول؛ میلی‌ثانیه یونیکس
+16. SET_ITEM_ACTIVE: { type, itemId, displayLabel, active: true|false } — فعال/غیرفعال کردن نمایش آیتم در مارکت
+17. SET_ITEM_FREE: { type, itemId, displayLabel, free: true|false } — رایگان کردن یا لغو رایگان‌بودن آیتم
+18. CREATE_ITEM: { type, displayLabel, name, description?, itemType?: "theme"|"frame"|"decoration"|"badge"|"other", categoryId?, coinPrice?, cashPrice?, free? } — ساخت آیتم جدید در مارکت (بدون فایل/تصویر؛ مدیر بعداً فایل را از پنل آپلود می‌کند)
+19. DELETE_ITEM: { type, itemId, displayLabel }
+20. CREATE_CATEGORY: { type, displayLabel, name }
+21. CREATE_SUBSCRIPTION_PLAN: { type, displayLabel, name, period: "monthly"|"yearly", priceToman, benefits?: string[] }
+22. SET_SUBSCRIPTION_PLAN_ACTIVE: { type, planId, displayLabel, active: true|false }
+23. GRANT_COINS: { type, uid, displayLabel, amount } — سکه به کیف‌پول کاربر اضافه/کم می‌کند (amount می‌تواند منفی باشد برای کسر)؛ uid را فقط از لیست کاربران context پیدا کنید
+24. MODERATE_REVIEW: { type, itemId, reviewId, displayLabel } — حذف یک نظر نامناسب از روی یک آیتم؛ itemId و reviewId را فقط از فهرست marketReviews موجود در context پیدا کنید
+
+برای شناسه‌ی itemId/planId/categoryId/reviewId فقط از فهرست marketItems/subscriptionPlans/marketCategories/marketReviews داده‌شده در context استفاده کنید و هرگز حدس نزنید؛ اگر آیتم/پلن با نام گفته‌شده پیدا نشد، آن مورد را در actions نگذارید و در reply توضیح دهید.
+اگر مدیر درخواست «پیشنهاد قیمت یا تخفیف بر اساس فروش» یا «چه آیتم‌هایی رو به فلان کاربر پیشنهاد بدم» یا «تحلیل خرید کاربر» داد، actions خالی بگذارید و در reply بر اساس فیلدهای salesCount و salesRevenueToman موجود در marketItems context (و در صورت وجود purchases کاربر)، پیشنهاد مشخص و مستدل بدهید (این نوع درخواست یک اکشن اجرایی نیست، فقط مشاوره است).
+اگر مدیر خواست گزارش فروش کلی رو بگو، actions خالی بگذارید و در reply بر اساس marketItems یک خلاصه‌ی متنی از پرفروش‌ترین‌ها و کل درآمد بدهید.
 
 displayLabel همیشه یک توضیح کوتاه فارسی از خودِ همان مورد است (مثلاً نام کاربر یا خلاصه‌ی پیام)، برای نمایش در چک‌لیست تاییدیه.
 فقط از context دقیق داده‌شده (لیست کاربران/تیکت‌ها/broadcastها/زمان فعلی) استفاده کنید؛ چیزی نسازید و حدس نزنید.`;
@@ -1352,11 +1403,12 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     const now = Date.now();
     const usersBrief = (state.users || []).slice(0, 400).map(u => {
       const bonus = (state.userXpBonusCache && state.userXpBonusCache[u.uid]) || 0;
+      const coins = (state.userWalletCache && state.userWalletCache[u.uid]) || 0;
       const ban = state.bans ? state.bans[u.uid] : null;
       const isBanned = !!(ban && (!ban.until || ban.until > now));
       return {
         uid: u.uid, name: u.name || null, userId: u.userId || null,
-        xp: (u.xp || 0) + bonus, adminXpBonus: bonus, banned: isBanned,
+        xp: (u.xp || 0) + bonus, adminXpBonus: bonus, coins, banned: isBanned,
         canCreateGroups: !!(state.permissions && state.permissions[u.uid]),
         canUseAi: !!(state.aiPermissions && state.aiPermissions[u.uid]),
       };
@@ -1368,6 +1420,20 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     const broadcastsBrief = (state.broadcasts || []).slice(0, 30).map(b => ({
       id: b.id, message: (b.message || '').slice(0, 150), sendAt: b.sendAt || null, pending: (b.sendAt || 0) > now,
     }));
+    const categoriesBrief = (state.marketCategories || []).map(c => ({ id: c.id, name: c.name }));
+    const itemsBrief = (state.marketItems || []).slice(0, 300).map(it => ({
+      id: it.id, name: it.name, type: it.type, categoryId: it.categoryId || null,
+      coinPrice: it.coinPrice || 0, cashPrice: it.cashPrice || 0, free: !!it.free,
+      discount: it.discount || null, publishAt: it.publishAt || null, active: it.active !== false,
+      salesCount: it.salesCount || 0, salesRevenueToman: it.salesRevenueToman || 0,
+    }));
+    const plansBrief = (state.marketPlans || []).map(p => ({
+      id: p.id, name: p.name, period: p.period, priceToman: p.priceToman || 0, active: p.active !== false,
+    }));
+    const reviewsBrief = (state.marketReviewsCache || []).slice(0, 200).map(r => ({
+      itemId: r.itemId, itemName: r.itemName, reviewId: r.id, userName: r.userName || null,
+      rating: r.rating || 0, text: (r.text || '').slice(0, 150),
+    }));
     return {
       nowTimestamp: now,
       nowReadable: new Date(now).toLocaleString('fa-IR', { dateStyle: 'full', timeStyle: 'short' }),
@@ -1375,6 +1441,10 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       users: usersBrief,
       tickets: ticketsBrief,
       broadcasts: broadcastsBrief,
+      marketCategories: categoriesBrief,
+      marketItems: itemsBrief,
+      subscriptionPlans: plansBrief,
+      marketReviews: reviewsBrief,
     };
   }
 
@@ -1384,7 +1454,29 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     if (!state.ticketsLoaded) tasks.push(loadTicketsDataOnly());
     if (!state.broadcastsLoaded) tasks.push(loadBroadcasts());
     if (!state.appStatusLoaded) tasks.push(loadAppStatus());
+    if (!state.marketLoaded) tasks.push(loadMarketData());
+    if (!state.marketReviewsCache) tasks.push(loadAllMarketReviews());
     if (tasks.length) await Promise.all(tasks);
+  }
+
+  // بارگذاری همه‌ی نظرات همه‌ی آیتم‌ها (برای context دستیار هوشمند و تب «نظرات»)
+  async function loadAllMarketReviews(){
+    try {
+      if (!state.marketLoaded) await loadMarketData();
+      const itemIds = state.marketItems.map(i => i.id);
+      const snaps = await Promise.all(itemIds.map(id => fbDb.ref('market/items/' + id + '/reviews').once('value')));
+      const all = [];
+      snaps.forEach((snap, idx) => {
+        const val = snap.val();
+        if (!val) return;
+        const itemId = itemIds[idx];
+        const item = state.marketItems.find(i => i.id === itemId);
+        Object.keys(val).forEach(reviewId => {
+          all.push({ id: reviewId, itemId, itemName: item ? item.name : itemId, ...val[reviewId] });
+        });
+      });
+      state.marketReviewsCache = all;
+    } catch(e) { console.error('loadAllMarketReviews error:', e); state.marketReviewsCache = []; }
   }
 
   // نسخه‌ی سبک از بارگذاری کاربران/تیکت‌ها بدون نیاز به وجود المان‌های DOM صفحات دیگر
@@ -1409,7 +1501,11 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
         }
       });
       state.userXpBonusCache = {};
-      Object.keys(usersVal).forEach(uid => { state.userXpBonusCache[uid] = usersVal[uid].adminXpBonus || 0; });
+      state.userWalletCache = {};
+      Object.keys(usersVal).forEach(uid => {
+        state.userXpBonusCache[uid] = usersVal[uid].adminXpBonus || 0;
+        state.userWalletCache[uid] = (usersVal[uid].wallet && usersVal[uid].wallet.coins) || 0;
+      });
       state.users = Object.keys(leaderVal).map(uid => ({ uid, ...leaderVal[uid] })).sort((a,b) => (b.xp||0) - (a.xp||0));
       state.usersLoaded = true;
     } catch(e) { console.error('renderUsersDataOnly error:', e); state.users = []; }
@@ -1569,6 +1665,11 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       GRANT_XP_BONUS: 'امتیاز جایزه', UPDATE_USER_NAME: 'تغییر نام', REPLY_TICKET: 'پاسخ تیکت',
       SET_TICKET_STATUS: 'تغییر وضعیت تیکت', DELETE_TICKET: 'حذف تیکت', CREATE_BROADCAST: 'نوتیفیکیشن جدید',
       CANCEL_BROADCAST: 'لغو نوتیفیکیشن', SET_APP_STATUS: 'وضعیت برنامه',
+      UPDATE_ITEM_PRICE: 'تغییر قیمت آیتم', APPLY_DISCOUNT: 'اعمال تخفیف', REMOVE_DISCOUNT: 'حذف تخفیف',
+      SCHEDULE_ITEM_PUBLISH: 'زمان‌بندی انتشار', SET_ITEM_ACTIVE: 'تغییر وضعیت نمایش', SET_ITEM_FREE: 'تغییر رایگان‌بودن',
+      CREATE_ITEM: 'ساخت آیتم جدید', DELETE_ITEM: 'حذف آیتم', CREATE_CATEGORY: 'ساخت دسته جدید',
+      CREATE_SUBSCRIPTION_PLAN: 'ساخت پلن اشتراک', SET_SUBSCRIPTION_PLAN_ACTIVE: 'تغییر وضعیت پلن',
+      GRANT_COINS: 'تغییر موجودی سکه', MODERATE_REVIEW: 'حذف نظر',
     };
     return map[type] || type;
   }
@@ -1656,12 +1757,17 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     const validUids = new Set(context.users.map(u => u.uid));
     const validTicketIds = new Set(context.tickets.map(t => t.id));
     const validBroadcastIds = new Set(context.broadcasts.map(b => b.id));
+    const validItemIds = new Set(context.marketItems.map(i => i.id));
+    const validPlanIds = new Set(context.subscriptionPlans.map(p => p.id));
     actions = actions.filter(a => {
       if (!a || !a.type) return false;
       if (['BAN_USER','UNBAN_USER','UPDATE_USER_PERMISSIONS','GRANT_XP_BONUS','UPDATE_USER_NAME'].includes(a.type)) return validUids.has(a.uid);
       if (['REPLY_TICKET','SET_TICKET_STATUS','DELETE_TICKET'].includes(a.type)) return validTicketIds.has(a.ticketId);
       if (a.type === 'CANCEL_BROADCAST') return validBroadcastIds.has(a.broadcastId);
       if (a.type === 'CREATE_BROADCAST' || a.type === 'SET_APP_STATUS') return true;
+      if (['UPDATE_ITEM_PRICE','APPLY_DISCOUNT','REMOVE_DISCOUNT','SCHEDULE_ITEM_PUBLISH','SET_ITEM_ACTIVE','SET_ITEM_FREE','DELETE_ITEM'].includes(a.type)) return validItemIds.has(a.itemId);
+      if (a.type === 'CREATE_ITEM' || a.type === 'CREATE_CATEGORY' || a.type === 'CREATE_SUBSCRIPTION_PLAN') return true;
+      if (a.type === 'SET_SUBSCRIPTION_PLAN_ACTIVE') return validPlanIds.has(a.planId);
       return false;
     });
     return { reply, actions };
@@ -1690,7 +1796,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     toast(m.hasError ? 'برخی عملیات با خطا مواجه شدند' : 'همه‌ی عملیات با موفقیت اجرا شد', m.hasError ? 'err' : 'ok');
     if (window.__aiPaintLog) window.__aiPaintLog();
     // رفرش کش‌های محلی مرتبط تا صفحات دیگه هم به‌روز باشن
-    state.usersLoaded = false; state.ticketsLoaded = false; state.broadcastsLoaded = false; state.appStatusLoaded = false;
+    state.usersLoaded = false; state.ticketsLoaded = false; state.broadcastsLoaded = false; state.appStatusLoaded = false; state.marketLoaded = false;
   }
 
   async function executeAiAction(a){
@@ -1755,12 +1861,103 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
         state.appStatus = { closed: !!a.closed, message: a.message || DEFAULT_MAINTENANCE_MSG };
         return;
       }
+      case 'UPDATE_ITEM_PRICE': {
+        const updates = { updatedAt: Date.now() };
+        if (typeof a.coinPrice === 'number') updates.coinPrice = a.coinPrice;
+        if (typeof a.cashPrice === 'number') updates.cashPrice = a.cashPrice;
+        await fbDb.ref('market/items/' + a.itemId).update(updates);
+        return;
+      }
+      case 'APPLY_DISCOUNT': {
+        const discount = {
+          active: true,
+          kind: a.kind === 'amount' ? 'amount' : 'percent',
+          value: typeof a.value === 'number' ? a.value : parseFloat(a.value) || 0,
+          startAt: typeof a.startAtTimestamp === 'number' ? a.startAtTimestamp : Date.now(),
+          endAt: typeof a.endAtTimestamp === 'number' ? a.endAtTimestamp : null,
+        };
+        await fbDb.ref('market/items/' + a.itemId).update({ discount, updatedAt: Date.now() });
+        return;
+      }
+      case 'REMOVE_DISCOUNT': {
+        await fbDb.ref('market/items/' + a.itemId + '/discount').remove();
+        return;
+      }
+      case 'SCHEDULE_ITEM_PUBLISH': {
+        const publishAt = typeof a.publishAtTimestamp === 'number' ? a.publishAtTimestamp : Date.now();
+        await fbDb.ref('market/items/' + a.itemId).update({ publishAt, published: true, updatedAt: Date.now() });
+        return;
+      }
+      case 'SET_ITEM_ACTIVE': {
+        await fbDb.ref('market/items/' + a.itemId).update({ active: !!a.active, updatedAt: Date.now() });
+        return;
+      }
+      case 'SET_ITEM_FREE': {
+        await fbDb.ref('market/items/' + a.itemId).update({ free: !!a.free, updatedAt: Date.now() });
+        return;
+      }
+      case 'CREATE_ITEM': {
+        const ref = fbDb.ref('market/items').push();
+        await ref.set({
+          name: a.name || 'آیتم بدون نام', description: a.description || '', type: a.itemType || 'other',
+          categoryId: a.categoryId || null, tags: {}, fileUrl: '', fileName: '', previewUrls: [],
+          coinPrice: typeof a.coinPrice === 'number' ? a.coinPrice : 0,
+          cashPrice: typeof a.cashPrice === 'number' ? a.cashPrice : 0,
+          free: !!a.free, discount: null, publishAt: null, published: false, active: true,
+          createdAt: Date.now(), updatedAt: Date.now(),
+        });
+        return;
+      }
+      case 'DELETE_ITEM': {
+        await fbDb.ref('market/items/' + a.itemId).remove();
+        return;
+      }
+      case 'CREATE_CATEGORY': {
+        const ref = fbDb.ref('market/categories').push();
+        await ref.set({ name: a.name || 'دسته جدید', order: (state.marketCategories || []).length, createdAt: Date.now() });
+        return;
+      }
+      case 'CREATE_SUBSCRIPTION_PLAN': {
+        const ref = fbDb.ref('market/subscriptionPlans').push();
+        await ref.set({
+          name: a.name || 'پلن جدید', period: a.period === 'yearly' ? 'yearly' : 'monthly',
+          priceToman: typeof a.priceToman === 'number' ? a.priceToman : 0,
+          benefits: Array.isArray(a.benefits) ? a.benefits : [],
+          active: true, order: (state.marketPlans || []).length, createdAt: Date.now(),
+        });
+        return;
+      }
+      case 'SET_SUBSCRIPTION_PLAN_ACTIVE': {
+        await fbDb.ref('market/subscriptionPlans/' + a.planId).update({ active: !!a.active });
+        return;
+      }
+      case 'GRANT_COINS': {
+        const amount = typeof a.amount === 'number' ? a.amount : parseInt(a.amount, 10) || 0;
+        const ref = fbDb.ref('users/' + a.uid + '/wallet/coins');
+        const res = await ref.transaction((cur) => Math.max(0, (cur || 0) + amount));
+        const newBal = res.snapshot ? res.snapshot.val() : null;
+        await fbDb.ref('users/' + a.uid + '/wallet/lastUpdated').set(Date.now());
+        await fbDb.ref('users/' + a.uid + '/walletHistory').push({
+          type: amount >= 0 ? 'earn' : 'spend', amount, reason: 'admin_ai_grant', at: Date.now(),
+        });
+        if (!state.userWalletCache) state.userWalletCache = {};
+        if (newBal != null) state.userWalletCache[a.uid] = newBal;
+        return;
+      }
+      case 'MODERATE_REVIEW': {
+        await fbDb.ref('market/items/' + a.itemId + '/reviews/' + a.reviewId).remove();
+        if (state.marketReviewsCache) {
+          state.marketReviewsCache = state.marketReviewsCache.filter(r => !(r.itemId === a.itemId && r.id === a.reviewId));
+        }
+        return;
+      }
       default:
         throw new Error('نوع اکشن ناشناخته: ' + a.type);
     }
   }
 
-  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast, confirmAiActions, cancelAiActions };
+  window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast, confirmAiActions, cancelAiActions,
+    openItemModal, deleteMarketItem, openCategoryModal, deleteMarketCategory, deleteMarketTag, openPlanModal, deleteMarketPlan, deleteMarketReview };
 
   // ===================== Content management =====================
   async function renderContent(){
@@ -1970,6 +2167,685 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       state.contentWords = [];
       loadContentWords();
     } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // ===================== مارکت (فروشگاه آیتم‌ها + اشتراک) =====================
+  // ساختار داده در Realtime Database:
+  //   market/categories/{catId}   -> { name, order, createdAt }
+  //   market/tags/{tagId}         -> { name, createdAt }
+  //   market/items/{itemId}       -> {
+  //     name, description, type, categoryId, tags: {tagId:true,...},
+  //     fileUrl, fileName, previewUrls: [url,...],
+  //     coinPrice, cashPrice, free,
+  //     discount: { active, kind:'percent'|'amount', value, startAt, endAt } | null,
+  //     publishAt, published, active,
+  //     salesCount, salesRevenueToman,   // فقط خواندنی؛ توسط اپ اصلی موقع خرید به‌روزرسانی می‌شن
+  //     createdAt, updatedAt
+  //   }
+  //   market/subscriptionPlans/{planId} -> { name, period:'monthly'|'yearly', priceToman, benefits:[...], active, order, createdAt }
+  const MARKET_ITEM_TYPES = [
+    { id: 'theme', label: 'تم' },
+    { id: 'frame', label: 'قاب پروفایل' },
+    { id: 'decoration', label: 'آیتم تزئینی' },
+    { id: 'badge', label: 'نشان' },
+    { id: 'other', label: 'سایر' },
+  ];
+  const MARKET_TABS = [
+    { id: 'items', label: 'آیتم‌ها', icon: 'market' },
+    { id: 'categories', label: 'دسته‌بندی‌ها', icon: 'content' },
+    { id: 'tags', label: 'برچسب‌ها', icon: 'tag' },
+    { id: 'subscriptions', label: 'اشتراک', icon: 'crown' },
+    { id: 'reviews', label: 'نظرات', icon: 'star' },
+    { id: 'report', label: 'گزارش فروش', icon: 'dashboard' },
+  ];
+
+  function itemTypeFa(t){ return (MARKET_ITEM_TYPES.find(x => x.id === t) || {}).label || 'سایر'; }
+
+  function isDiscountLive(d, now){
+    now = now || Date.now();
+    if (!d || !d.active) return false;
+    if (d.startAt && now < d.startAt) return false;
+    if (d.endAt && now > d.endAt) return false;
+    return true;
+  }
+  function effectivePrice(item, priceField, now){
+    const base = item[priceField] || 0;
+    if (!base || item.free) return 0;
+    const d = item.discount;
+    if (!isDiscountLive(d, now)) return base;
+    if (d.kind === 'percent') return Math.max(0, Math.round(base - (base * (d.value || 0) / 100)));
+    return Math.max(0, Math.round(base - (d.value || 0)));
+  }
+  function isPublished(item, now){
+    now = now || Date.now();
+    if (item.active === false) return false;
+    if (!item.publishAt) return !!item.published;
+    return item.publishAt <= now;
+  }
+
+  async function loadMarketData(force){
+    if (state.marketLoaded && !force) return;
+    try {
+      const [catSnap, tagSnap, itemSnap, planSnap] = await Promise.all([
+        fbDb.ref('market/categories').once('value'),
+        fbDb.ref('market/tags').once('value'),
+        fbDb.ref('market/items').once('value'),
+        fbDb.ref('market/subscriptionPlans').once('value'),
+      ]);
+      const catVal = catSnap.val() || {};
+      const tagVal = tagSnap.val() || {};
+      const itemVal = itemSnap.val() || {};
+      const planVal = planSnap.val() || {};
+      state.marketCategories = Object.keys(catVal).map(id => ({ id, ...catVal[id] })).sort((a,b) => (a.order||0)-(b.order||0));
+      state.marketTags = Object.keys(tagVal).map(id => ({ id, ...tagVal[id] }));
+      state.marketItems = Object.keys(itemVal).map(id => ({ id, ...itemVal[id] })).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+      state.marketPlans = Object.keys(planVal).map(id => ({ id, ...planVal[id] })).sort((a,b) => (a.order||0)-(b.order||0));
+      state.marketLoaded = true;
+    } catch(e) {
+      console.error('loadMarketData error:', e);
+      toast('خطا در بارگذاری اطلاعات مارکت', 'err');
+    }
+  }
+
+  async function renderMarket(){
+    const main = document.getElementById('mainArea');
+    main.innerHTML = `
+      <div class="page-head">
+        <h2>${icon('market',16)} مارکت</h2>
+        <p>مدیریت آیتم‌ها، دسته‌بندی‌ها، برچسب‌ها، قیمت‌گذاری، تخفیف و پلن‌های اشتراک</p>
+      </div>
+      <div class="tab-strip" id="marketTabs"></div>
+      <div id="marketBody"><div class="empty-state"><span class="loading-spin"></span></div></div>
+    `;
+    document.getElementById('marketTabs').innerHTML = MARKET_TABS.map(t => `
+      <button class="${t.id === state.marketTab ? 'active' : ''}" data-tab="${t.id}">${icon(t.icon,14)} ${t.label}</button>
+    `).join('');
+    document.querySelectorAll('#marketTabs button').forEach(btn => {
+      btn.addEventListener('click', () => { state.marketTab = btn.getAttribute('data-tab'); paintMarketBody(); });
+    });
+    await loadMarketData();
+    paintMarketBody();
+  }
+
+  function paintMarketBody(){
+    document.querySelectorAll('#marketTabs button').forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === state.marketTab));
+    if (state.marketTab === 'items') paintMarketItems();
+    else if (state.marketTab === 'categories') paintMarketCategories();
+    else if (state.marketTab === 'tags') paintMarketTags();
+    else if (state.marketTab === 'subscriptions') paintMarketPlans();
+    else if (state.marketTab === 'reviews') paintMarketReviews();
+    else if (state.marketTab === 'report') paintMarketReport();
+  }
+
+  // --------- آیتم‌ها ---------
+  function paintMarketItems(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    const catOptions = state.marketCategories.map(c => `<option value="${c.id}" ${state.marketCategoryFilter===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+    body.innerHTML = `
+      <div class="toolbar">
+        <select class="filter-select" id="mktCatFilter">
+          <option value="all">همه دسته‌ها</option>
+          ${catOptions}
+        </select>
+        <input class="search-input" id="mktItemSearch" placeholder="جستجوی آیتم...">
+        <button class="btn-small" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px" id="mktAddItemBtn">${icon('plus',14)} افزودن آیتم</button>
+      </div>
+      <div id="mktItemListWrap"></div>
+    `;
+    document.getElementById('mktItemSearch').value = state.marketSearch;
+    document.getElementById('mktItemSearch').addEventListener('input', (e) => { state.marketSearch = e.target.value.trim().toLowerCase(); paintMarketItemList(); });
+    document.getElementById('mktCatFilter').addEventListener('change', (e) => { state.marketCategoryFilter = e.target.value; paintMarketItemList(); });
+    document.getElementById('mktAddItemBtn').addEventListener('click', () => openItemModal(null));
+    paintMarketItemList();
+  }
+
+  function paintMarketItemList(){
+    const wrap = document.getElementById('mktItemListWrap');
+    if (!wrap) return;
+    const now = Date.now();
+    let list = state.marketItems;
+    if (state.marketCategoryFilter !== 'all') list = list.filter(i => i.categoryId === state.marketCategoryFilter);
+    if (state.marketSearch) list = list.filter(i => (i.name||'').toLowerCase().includes(state.marketSearch));
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">${icon('market',46)}<p>آیتمی یافت نشد.</p></div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th></th><th>نام</th><th>دسته</th><th>قیمت سکه</th><th>قیمت تومان</th><th>تخفیف</th><th>وضعیت</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(it => {
+              const cat = state.marketCategories.find(c => c.id === it.categoryId);
+              const disc = isDiscountLive(it.discount, now);
+              const coinFinal = effectivePrice(it, 'coinPrice', now);
+              const cashFinal = effectivePrice(it, 'cashPrice', now);
+              const published = isPublished(it, now);
+              const statusPill = it.active === false
+                ? `<span class="pill closed">غیرفعال</span>`
+                : (published ? `<span class="pill active">منتشرشده</span>` : `<span class="pill open">${it.publishAt ? 'زمان‌بندی‌شده' : 'پیش‌نویس'}</span>`);
+              return `
+              <tr>
+                <td>${it.previewUrls && it.previewUrls[0] ? `<img src="${esc(it.previewUrls[0])}" style="width:34px;height:34px;border-radius:8px;object-fit:cover;display:block">` : `<span style="opacity:.4">${icon('image',18)}</span>`}</td>
+                <td style="font-weight:600">${esc(it.name || '')}<div style="font-size:11px;color:var(--muted)">${itemTypeFa(it.type)}</div></td>
+                <td style="color:var(--muted);font-size:12px">${cat ? esc(cat.name) : '—'}</td>
+                <td class="mono">${it.free ? 'رایگان' : (disc && coinFinal !== (it.coinPrice||0) ? `<s style="opacity:.5">${faNum(it.coinPrice||0)}</s> ${faNum(coinFinal)}` : faNum(it.coinPrice||0))}</td>
+                <td class="mono">${it.free ? 'رایگان' : (disc && cashFinal !== (it.cashPrice||0) ? `<s style="opacity:.5">${faNum(it.cashPrice||0)}</s> ${faNum(cashFinal)}` : faNum(it.cashPrice||0))}</td>
+                <td>${disc ? `<span class="pill open">${it.discount.kind === 'percent' ? faNum(it.discount.value)+'٪' : faNum(it.discount.value)+' ت'}</span>` : '—'}</td>
+                <td>${statusPill}</td>
+                <td>
+                  <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <button class="icon-btn" title="ویرایش" onclick="__admin.openItemModal('${it.id}')">${icon('edit',14)}</button>
+                    <button class="icon-btn" title="حذف" onclick="__admin.deleteMarketItem('${it.id}')">${icon('trash',14)}</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11.5px;color:var(--placeholder)">${faNum(list.length)} آیتم</div>
+    `;
+  }
+
+  async function uploadMarketFile(file, itemId, kind){
+    const safeName = (file.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `market/${kind}/${itemId}/${Date.now()}_${safeName}`;
+    const ref = fbStorage.ref().child(path);
+    const snap = await ref.put(file);
+    return await snap.ref.getDownloadURL();
+  }
+
+  function openItemModal(itemId){
+    const isNew = !itemId;
+    const it = isNew ? {
+      name: '', description: '', type: 'theme', categoryId: '', tags: {},
+      fileUrl: '', fileName: '', previewUrls: [],
+      coinPrice: 0, cashPrice: 0, free: false,
+      discount: null, publishAt: null, active: true,
+    } : state.marketItems.find(x => x.id === itemId);
+    if (!it) return;
+    const draftId = itemId || ('new-' + Date.now());
+    const pendingFiles = { mainFile: null, previewFiles: [] };
+    const catOptions = state.marketCategories.map(c => `<option value="${c.id}" ${it.categoryId===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+    const typeOptions = MARKET_ITEM_TYPES.map(t => `<option value="${t.id}" ${it.type===t.id?'selected':''}>${t.label}</option>`).join('');
+    const d = it.discount || { kind: 'percent', value: 0, startAt: null, endAt: null, active: false };
+    const toLocalInput = (ts) => ts ? new Date(ts - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : '';
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()" style="max-width:520px;max-height:88vh;overflow-y:auto">
+        <h3>${isNew ? 'افزودن آیتم' : 'ویرایش آیتم'}</h3>
+        <div class="modal-sub">مارکت</div>
+
+        <div class="mfield-row mfield-group">
+          <div><label class="mlabel">نام آیتم</label><input class="mfield" id="itName" value="${esc(it.name||'')}"></div>
+          <div><label class="mlabel">نوع</label><select class="mfield" id="itType">${typeOptions}</select></div>
+        </div>
+        <div class="mfield-group"><label class="mlabel">توضیحات</label><textarea class="mfield ta" id="itDesc" rows="2">${esc(it.description||'')}</textarea></div>
+        <div class="mfield-row mfield-group">
+          <div><label class="mlabel">دسته‌بندی</label><select class="mfield" id="itCategory"><option value="">— بدون دسته —</option>${catOptions}</select></div>
+          <div><label class="mlabel">برچسب‌ها</label>
+            <div id="itTagsWrap" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--panel2);border-radius:10px;min-height:38px">
+              ${state.marketTags.map(t => `
+                <label style="display:flex;align-items:center;gap:4px;font-size:11.5px;background:var(--panel);padding:4px 8px;border-radius:20px;cursor:pointer">
+                  <input type="checkbox" class="itTagChk" value="${t.id}" ${it.tags && it.tags[t.id] ? 'checked' : ''} style="margin:0">${esc(t.name)}
+                </label>`).join('') || '<span style="font-size:11px;color:var(--muted)">برچسبی ثبت نشده</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="mfield-group" style="border-top:1px solid var(--border2);padding-top:12px">
+          <label class="mlabel">فایل اصلی آیتم</label>
+          <input type="file" id="itMainFile" class="mfield">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" id="itMainFileCur">${it.fileName ? 'فایل فعلی: ' + esc(it.fileName) : 'فایلی آپلود نشده'}</div>
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">تصاویر پیش‌نمایش (چندتایی)</label>
+          <input type="file" id="itPreviewFiles" class="mfield" multiple accept="image/*">
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap" id="itPreviewCur">
+            ${(it.previewUrls||[]).map(u => `<img src="${esc(u)}" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`).join('')}
+          </div>
+        </div>
+
+        <div class="mfield-row mfield-group" style="border-top:1px solid var(--border2);padding-top:12px">
+          <div><label class="mlabel">${icon('coin',12)} قیمت (سکه)</label><input class="mfield" id="itCoinPrice" type="number" min="0" value="${it.coinPrice||0}"></div>
+          <div><label class="mlabel">قیمت (تومان)</label><input class="mfield" id="itCashPrice" type="number" min="0" value="${it.cashPrice||0}"></div>
+        </div>
+        <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
+          <span style="font-size:13px">رایگان</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="itFree" ${it.free?'checked':''} style="opacity:0;width:0;height:0">
+            <span id="itFreeTrack" style="position:absolute;inset:0;background:${it.free?'var(--sage-strong)':'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+
+        <div class="mfield-group" style="border-top:1px solid var(--border2);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;display:flex;align-items:center;gap:6px">${icon('percent',13)} تخفیف فعال</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="itDiscActive" ${d.active?'checked':''} style="opacity:0;width:0;height:0">
+            <span id="itDiscTrack" style="position:absolute;inset:0;background:${d.active?'var(--sage-strong)':'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+        <div class="mfield-row mfield-group">
+          <div><label class="mlabel">نوع تخفیف</label>
+            <select class="mfield" id="itDiscKind">
+              <option value="percent" ${d.kind==='percent'?'selected':''}>درصدی</option>
+              <option value="amount" ${d.kind==='amount'?'selected':''}>مبلغ ثابت (تومان)</option>
+            </select>
+          </div>
+          <div><label class="mlabel">مقدار تخفیف</label><input class="mfield" id="itDiscValue" type="number" min="0" value="${d.value||0}"></div>
+        </div>
+        <div class="mfield-row mfield-group">
+          <div><label class="mlabel">شروع تخفیف</label><input class="mfield" id="itDiscStart" type="datetime-local" value="${toLocalInput(d.startAt)}"></div>
+          <div><label class="mlabel">پایان تخفیف</label><input class="mfield" id="itDiscEnd" type="datetime-local" value="${toLocalInput(d.endAt)}"></div>
+        </div>
+
+        <div class="mfield-group" style="border-top:1px solid var(--border2);padding-top:12px">
+          <label class="mlabel">${icon('clock',12)} زمان انتشار (خالی = فوری با ذخیره)</label>
+          <input class="mfield" id="itPublishAt" type="datetime-local" value="${toLocalInput(it.publishAt)}">
+        </div>
+        <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
+          <span style="font-size:13px">فعال (در مارکت نمایش داده شود)</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="itActive" ${it.active!==false?'checked':''} style="opacity:0;width:0;height:0">
+            <span id="itActiveTrack" style="position:absolute;inset:0;background:${it.active!==false?'var(--sage-strong)':'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" id="itCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="itSaveBtn">ذخیره</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#itCancelBtn').addEventListener('click', () => backdrop.remove());
+    [['itFree','itFreeTrack'],['itDiscActive','itDiscTrack'],['itActive','itActiveTrack']].forEach(([cb, tr]) => {
+      const c = backdrop.querySelector('#'+cb), t = backdrop.querySelector('#'+tr);
+      c.addEventListener('change', () => { t.style.background = c.checked ? 'var(--sage-strong)' : 'var(--border2)'; });
+    });
+    backdrop.querySelector('#itMainFile').addEventListener('change', (e) => { pendingFiles.mainFile = e.target.files[0] || null; });
+    backdrop.querySelector('#itPreviewFiles').addEventListener('change', (e) => { pendingFiles.previewFiles = Array.from(e.target.files || []); });
+
+    backdrop.querySelector('#itSaveBtn').addEventListener('click', async () => {
+      const name = backdrop.querySelector('#itName').value.trim();
+      if (!name) { toast('نام آیتم الزامی است', 'err'); return; }
+      const saveBtn = backdrop.querySelector('#itSaveBtn');
+      saveBtn.disabled = true; saveBtn.textContent = 'در حال ذخیره...';
+      try {
+        const targetId = isNew ? fbDb.ref('market/items').push().key : itemId;
+        let fileUrl = it.fileUrl || '', fileName = it.fileName || '';
+        if (pendingFiles.mainFile) {
+          fileUrl = await uploadMarketFile(pendingFiles.mainFile, targetId, 'files');
+          fileName = pendingFiles.mainFile.name;
+        }
+        let previewUrls = it.previewUrls || [];
+        if (pendingFiles.previewFiles.length) {
+          const uploaded = await Promise.all(pendingFiles.previewFiles.map(f => uploadMarketFile(f, targetId, 'previews')));
+          previewUrls = previewUrls.concat(uploaded);
+        }
+        const tags = {};
+        backdrop.querySelectorAll('.itTagChk:checked').forEach(chk => { tags[chk.value] = true; });
+        const publishVal = backdrop.querySelector('#itPublishAt').value;
+        const discActive = backdrop.querySelector('#itDiscActive').checked;
+        const payload = {
+          name,
+          description: backdrop.querySelector('#itDesc').value.trim(),
+          type: backdrop.querySelector('#itType').value,
+          categoryId: backdrop.querySelector('#itCategory').value || null,
+          tags,
+          fileUrl, fileName, previewUrls,
+          coinPrice: parseInt(backdrop.querySelector('#itCoinPrice').value, 10) || 0,
+          cashPrice: parseInt(backdrop.querySelector('#itCashPrice').value, 10) || 0,
+          free: backdrop.querySelector('#itFree').checked,
+          discount: discActive ? {
+            active: true,
+            kind: backdrop.querySelector('#itDiscKind').value,
+            value: parseFloat(backdrop.querySelector('#itDiscValue').value) || 0,
+            startAt: backdrop.querySelector('#itDiscStart').value ? new Date(backdrop.querySelector('#itDiscStart').value).getTime() : null,
+            endAt: backdrop.querySelector('#itDiscEnd').value ? new Date(backdrop.querySelector('#itDiscEnd').value).getTime() : null,
+          } : null,
+          publishAt: publishVal ? new Date(publishVal).getTime() : null,
+          published: true,
+          active: backdrop.querySelector('#itActive').checked,
+          updatedAt: Date.now(),
+        };
+        if (isNew) payload.createdAt = Date.now();
+        await fbDb.ref('market/items/' + targetId).update(payload);
+        toast('آیتم ذخیره شد', 'ok');
+        backdrop.remove();
+        state.marketLoaded = false;
+        await loadMarketData(true);
+        paintMarketItemList();
+      } catch(e) {
+        console.error('save item error:', e);
+        toast('خطا در ذخیره‌سازی آیتم', 'err');
+        saveBtn.disabled = false; saveBtn.textContent = 'ذخیره';
+      }
+    });
+  }
+
+  async function deleteMarketItem(itemId){
+    if (!confirm('این آیتم برای همیشه حذف شود؟')) return;
+    try {
+      await fbDb.ref('market/items/' + itemId).remove();
+      toast('آیتم حذف شد', 'ok');
+      state.marketItems = state.marketItems.filter(i => i.id !== itemId);
+      paintMarketItemList();
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- دسته‌بندی‌ها ---------
+  function paintMarketCategories(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="toolbar"><button class="btn-small" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px" id="mktAddCatBtn">${icon('plus',14)} دسته جدید</button></div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>نام</th><th>تعداد آیتم</th><th></th></tr></thead>
+          <tbody>
+            ${state.marketCategories.map(c => `
+              <tr>
+                <td style="font-weight:600">${esc(c.name)}</td>
+                <td class="mono">${faNum(state.marketItems.filter(i => i.categoryId === c.id).length)}</td>
+                <td>
+                  <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <button class="icon-btn" title="ویرایش" onclick="__admin.openCategoryModal('${c.id}')">${icon('edit',14)}</button>
+                    <button class="icon-btn" title="حذف" onclick="__admin.deleteMarketCategory('${c.id}')">${icon('trash',14)}</button>
+                  </div>
+                </td>
+              </tr>`).join('') || `<tr><td colspan="3" style="text-align:center;color:var(--muted)">دسته‌ای ثبت نشده</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('mktAddCatBtn').addEventListener('click', () => openCategoryModal(null));
+  }
+
+  function openCategoryModal(catId){
+    const isNew = !catId;
+    const c = isNew ? { name: '', order: state.marketCategories.length } : state.marketCategories.find(x => x.id === catId);
+    if (!c) return;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>${isNew ? 'دسته جدید' : 'ویرایش دسته'}</h3>
+        <div class="mfield-group"><label class="mlabel">نام دسته</label><input class="mfield" id="catName" value="${esc(c.name||'')}"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="catCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="catSaveBtn">ذخیره</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#catCancelBtn').addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#catSaveBtn').addEventListener('click', async () => {
+      const name = backdrop.querySelector('#catName').value.trim();
+      if (!name) { toast('نام دسته الزامی است', 'err'); return; }
+      try {
+        const targetId = isNew ? fbDb.ref('market/categories').push().key : catId;
+        await fbDb.ref('market/categories/' + targetId).update({ name, order: c.order || 0, createdAt: c.createdAt || Date.now() });
+        toast('ذخیره شد', 'ok');
+        backdrop.remove();
+        state.marketLoaded = false;
+        await loadMarketData(true);
+        paintMarketCategories();
+      } catch(e) { toast('خطا در ذخیره‌سازی', 'err'); }
+    });
+  }
+
+  async function deleteMarketCategory(catId){
+    if (!confirm('این دسته حذف شود؟ (آیتم‌های موجود بدون دسته می‌شوند)')) return;
+    try {
+      await fbDb.ref('market/categories/' + catId).remove();
+      state.marketCategories = state.marketCategories.filter(c => c.id !== catId);
+      paintMarketCategories();
+      toast('دسته حذف شد', 'ok');
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- برچسب‌ها ---------
+  function paintMarketTags(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="toolbar">
+        <input class="search-input" id="mktNewTagInput" placeholder="نام برچسب جدید...">
+        <button class="btn-small" id="mktAddTagBtn">${icon('plus',14)} افزودن</button>
+      </div>
+      <div class="card" style="display:flex;flex-wrap:wrap;gap:8px">
+        ${state.marketTags.map(t => `
+          <span class="pill closed" style="display:inline-flex;align-items:center;gap:8px">
+            ${icon('tag',11)} ${esc(t.name)}
+            <button class="icon-btn" style="width:18px;height:18px" title="حذف" onclick="__admin.deleteMarketTag('${t.id}')">${icon('trash',11)}</button>
+          </span>
+        `).join('') || '<span style="color:var(--muted);font-size:12px">برچسبی ثبت نشده</span>'}
+      </div>
+    `;
+    document.getElementById('mktAddTagBtn').addEventListener('click', async () => {
+      const input = document.getElementById('mktNewTagInput');
+      const name = input.value.trim();
+      if (!name) return;
+      try {
+        const ref = fbDb.ref('market/tags').push();
+        await ref.set({ name, createdAt: Date.now() });
+        input.value = '';
+        state.marketLoaded = false;
+        await loadMarketData(true);
+        paintMarketTags();
+      } catch(e) { toast('خطا در ذخیره‌سازی برچسب', 'err'); }
+    });
+  }
+
+  async function deleteMarketTag(tagId){
+    if (!confirm('این برچسب حذف شود؟')) return;
+    try {
+      await fbDb.ref('market/tags/' + tagId).remove();
+      state.marketTags = state.marketTags.filter(t => t.id !== tagId);
+      paintMarketTags();
+      toast('برچسب حذف شد', 'ok');
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- پلن‌های اشتراک ---------
+  function paintMarketPlans(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="toolbar"><button class="btn-small" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px" id="mktAddPlanBtn">${icon('plus',14)} پلن جدید</button></div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>نام</th><th>دوره</th><th>قیمت (تومان)</th><th>مزایا</th><th>وضعیت</th><th></th></tr></thead>
+          <tbody>
+            ${state.marketPlans.map(p => `
+              <tr>
+                <td style="font-weight:600">${icon('crown',13)} ${esc(p.name)}</td>
+                <td>${p.period === 'yearly' ? 'سالانه' : 'ماهانه'}</td>
+                <td class="mono">${faNum(p.priceToman||0)}</td>
+                <td style="font-size:11.5px;color:var(--muted);max-width:220px">${esc((p.benefits||[]).join('، '))}</td>
+                <td>${p.active !== false ? '<span class="pill active">فعال</span>' : '<span class="pill closed">غیرفعال</span>'}</td>
+                <td>
+                  <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <button class="icon-btn" title="ویرایش" onclick="__admin.openPlanModal('${p.id}')">${icon('edit',14)}</button>
+                    <button class="icon-btn" title="حذف" onclick="__admin.deleteMarketPlan('${p.id}')">${icon('trash',14)}</button>
+                  </div>
+                </td>
+              </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted)">پلنی ثبت نشده</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('mktAddPlanBtn').addEventListener('click', () => openPlanModal(null));
+  }
+
+  function openPlanModal(planId){
+    const isNew = !planId;
+    const p = isNew ? { name: '', period: 'monthly', priceToman: 0, benefits: [], active: true, order: state.marketPlans.length }
+                     : state.marketPlans.find(x => x.id === planId);
+    if (!p) return;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>${isNew ? 'پلن اشتراک جدید' : 'ویرایش پلن اشتراک'}</h3>
+        <div class="mfield-group"><label class="mlabel">نام پلن</label><input class="mfield" id="planName" value="${esc(p.name||'')}"></div>
+        <div class="mfield-row mfield-group">
+          <div><label class="mlabel">دوره</label>
+            <select class="mfield" id="planPeriod">
+              <option value="monthly" ${p.period==='monthly'?'selected':''}>ماهانه</option>
+              <option value="yearly" ${p.period==='yearly'?'selected':''}>سالانه</option>
+            </select>
+          </div>
+          <div><label class="mlabel">قیمت (تومان)</label><input class="mfield" id="planPrice" type="number" min="0" value="${p.priceToman||0}"></div>
+        </div>
+        <div class="mfield-group"><label class="mlabel">مزایا (هر مورد در یک خط)</label><textarea class="mfield ta" id="planBenefits" rows="4">${esc((p.benefits||[]).join('\n'))}</textarea></div>
+        <div class="mfield-group" style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:10px 13px">
+          <span style="font-size:13px">فعال</span>
+          <label style="position:relative;display:inline-block;width:40px;height:22px">
+            <input type="checkbox" id="planActive" ${p.active!==false?'checked':''} style="opacity:0;width:0;height:0">
+            <span id="planActiveTrack" style="position:absolute;inset:0;background:${p.active!==false?'var(--sage-strong)':'var(--border2)'};border-radius:20px;transition:0.15s;cursor:pointer"></span>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="planCancelBtn">انصراف</button>
+          <button class="btn-confirm" id="planSaveBtn">ذخیره</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#planCancelBtn').addEventListener('click', () => backdrop.remove());
+    const activeChk = backdrop.querySelector('#planActive'), activeTrack = backdrop.querySelector('#planActiveTrack');
+    activeChk.addEventListener('change', () => { activeTrack.style.background = activeChk.checked ? 'var(--sage-strong)' : 'var(--border2)'; });
+    backdrop.querySelector('#planSaveBtn').addEventListener('click', async () => {
+      const name = backdrop.querySelector('#planName').value.trim();
+      if (!name) { toast('نام پلن الزامی است', 'err'); return; }
+      try {
+        const targetId = isNew ? fbDb.ref('market/subscriptionPlans').push().key : planId;
+        const benefits = backdrop.querySelector('#planBenefits').value.split('\n').map(s => s.trim()).filter(Boolean);
+        const payload = {
+          name,
+          period: backdrop.querySelector('#planPeriod').value,
+          priceToman: parseInt(backdrop.querySelector('#planPrice').value, 10) || 0,
+          benefits,
+          active: activeChk.checked,
+          order: p.order || 0,
+          createdAt: p.createdAt || Date.now(),
+        };
+        await fbDb.ref('market/subscriptionPlans/' + targetId).update(payload);
+        toast('پلن ذخیره شد', 'ok');
+        backdrop.remove();
+        state.marketLoaded = false;
+        await loadMarketData(true);
+        paintMarketPlans();
+      } catch(e) { toast('خطا در ذخیره‌سازی پلن', 'err'); }
+    });
+  }
+
+  async function deleteMarketPlan(planId){
+    if (!confirm('این پلن حذف شود؟')) return;
+    try {
+      await fbDb.ref('market/subscriptionPlans/' + planId).remove();
+      state.marketPlans = state.marketPlans.filter(p => p.id !== planId);
+      paintMarketPlans();
+      toast('پلن حذف شد', 'ok');
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- نظرات کاربران ---------
+  async function paintMarketReviews(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    body.innerHTML = `<div class="empty-state"><span class="loading-spin"></span></div>`;
+    try {
+      const itemIds = state.marketItems.map(i => i.id);
+      const snaps = await Promise.all(itemIds.map(id => fbDb.ref('market/items/' + id + '/reviews').once('value')));
+      const allReviews = [];
+      snaps.forEach((snap, idx) => {
+        const val = snap.val();
+        if (!val) return;
+        const itemId = itemIds[idx];
+        const item = state.marketItems.find(i => i.id === itemId);
+        Object.keys(val).forEach(reviewId => {
+          allReviews.push({ id: reviewId, itemId, itemName: item ? item.name : itemId, ...val[reviewId] });
+        });
+      });
+      allReviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      if (!allReviews.length) {
+        body.innerHTML = `<div class="empty-state">${icon('star',46)}<p>نظری ثبت نشده.</p></div>`;
+        return;
+      }
+      body.innerHTML = `
+        <div class="card" style="padding:0;overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>آیتم</th><th>کاربر</th><th>امتیاز</th><th>متن</th><th>تاریخ</th><th></th></tr></thead>
+            <tbody>
+              ${allReviews.map(r => `
+                <tr>
+                  <td style="font-weight:600">${esc(r.itemName || '')}</td>
+                  <td style="font-size:12px;color:var(--muted)">${esc(r.userName || '')}</td>
+                  <td class="mono">${'★'.repeat(r.rating || 0)}</td>
+                  <td style="font-size:12px;max-width:260px">${esc(r.text || '')}</td>
+                  <td style="font-size:11px;color:var(--placeholder)">${fmtDate(r.createdAt)}</td>
+                  <td><button class="icon-btn" title="حذف نظر" onclick="__admin.deleteMarketReview('${r.itemId}','${r.id}')">${icon('trash',14)}</button></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;font-size:11.5px;color:var(--placeholder)">${faNum(allReviews.length)} نظر</div>
+      `;
+    } catch(e) {
+      console.error('paintMarketReviews error:', e);
+      body.innerHTML = `<div class="empty-state"><p>خطا در بارگذاری نظرات.</p></div>`;
+    }
+  }
+
+  async function deleteMarketReview(itemId, reviewId){
+    if (!confirm('این نظر حذف شود؟')) return;
+    try {
+      await fbDb.ref('market/items/' + itemId + '/reviews/' + reviewId).remove();
+      toast('نظر حذف شد', 'ok');
+      paintMarketReviews();
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- گزارش فروش ---------
+  function paintMarketReport(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    const items = state.marketItems.slice().sort((a,b) => (b.salesCount||0) - (a.salesCount||0));
+    const totalSales = items.reduce((s,i) => s + (i.salesCount||0), 0);
+    const totalRevenue = items.reduce((s,i) => s + (i.salesRevenueToman||0), 0);
+    body.innerHTML = `
+      <div class="stat-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">
+        <div class="card"><div style="font-size:11px;color:var(--muted)">تعداد کل فروش</div><div style="font-size:22px;font-weight:700;color:var(--brass)" class="mono">${faNum(totalSales)}</div></div>
+        <div class="card"><div style="font-size:11px;color:var(--muted)">درآمد تومانی کل</div><div style="font-size:22px;font-weight:700;color:var(--brass)" class="mono">${faNum(totalRevenue)}</div></div>
+        <div class="card"><div style="font-size:11px;color:var(--muted)">تعداد آیتم فعال</div><div style="font-size:22px;font-weight:700;color:var(--brass)" class="mono">${faNum(items.filter(i=>i.active!==false).length)}</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>آیتم</th><th>دسته</th><th>تعداد فروش</th><th>درآمد تومانی</th></tr></thead>
+          <tbody>
+            ${items.map(it => {
+              const cat = state.marketCategories.find(c => c.id === it.categoryId);
+              return `
+              <tr>
+                <td style="font-weight:600">${esc(it.name||'')}</td>
+                <td style="color:var(--muted);font-size:12px">${cat ? esc(cat.name) : '—'}</td>
+                <td class="mono">${faNum(it.salesCount||0)}</td>
+                <td class="mono">${faNum(it.salesRevenueToman||0)}</td>
+              </tr>`;
+            }).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--muted)">آیتمی ثبت نشده</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
   // ===================== اطلاع‌رسانی همگانی + وضعیت برنامه (بستن/بروزرسانی) =====================
