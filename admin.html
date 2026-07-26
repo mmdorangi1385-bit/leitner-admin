@@ -15,7 +15,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -450,7 +449,6 @@
   firebase.initializeApp(firebaseConfig);
   const fbAuth = firebase.auth();
   const fbDb = firebase.database();
-  const fbStorage = firebase.storage();
 
   // ===================== Admin allow-list =====================
   // فقط UIDهای زیر اجازه‌ی ورود به پنل مدیریت رو دارن. بعد از ساختن حساب مدیر با ایمیل/رمز از
@@ -588,7 +586,7 @@
     appStatus: { closed: false, message: '' }, appStatusLoaded: false,
     broadcasts: [], broadcastsLoaded: false,
     marketTab: 'items',
-    marketItems: [], marketCategories: [], marketTags: [], marketPlans: [], marketLoaded: false,
+    marketItems: [], marketCategories: [], marketTags: [], marketPlans: [], marketDiscountCodes: [], marketLoaded: false,
     marketSearch: '', marketCategoryFilter: 'all',
     aiChat: { messages: [], busy: false, pendingActions: null },
   };
@@ -1957,7 +1955,8 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
   }
 
   window.__admin = { navigate, openReplyModal, setTicketStatus, deleteTicket, openEditUserModal, openBanModal, openWordModal, deleteWord, saveAppStatus, sendBroadcast, cancelBroadcast, deleteBroadcast, confirmAiActions, cancelAiActions,
-    openItemModal, deleteMarketItem, openCategoryModal, deleteMarketCategory, deleteMarketTag, openPlanModal, deleteMarketPlan, deleteMarketReview };
+    openItemModal, deleteMarketItem, openCategoryModal, deleteMarketCategory, deleteMarketTag, openPlanModal, deleteMarketPlan, deleteMarketReview,
+    toggleMarketDiscount, deleteMarketDiscount };
 
   // ===================== Content management =====================
   async function renderContent(){
@@ -2188,6 +2187,8 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     { id: 'frame', label: 'قاب پروفایل' },
     { id: 'decoration', label: 'آیتم تزئینی' },
     { id: 'badge', label: 'نشان' },
+    { id: 'wordPack', label: '📚 بسته کلمات' },
+    { id: 'coinPack', label: '🪙 بسته سکه' },
     { id: 'other', label: 'سایر' },
   ];
   const MARKET_TABS = [
@@ -2195,6 +2196,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     { id: 'categories', label: 'دسته‌بندی‌ها', icon: 'content' },
     { id: 'tags', label: 'برچسب‌ها', icon: 'tag' },
     { id: 'subscriptions', label: 'اشتراک', icon: 'crown' },
+    { id: 'discounts', label: 'کد تخفیف', icon: 'percent' },
     { id: 'reviews', label: 'نظرات', icon: 'star' },
     { id: 'report', label: 'گزارش فروش', icon: 'dashboard' },
   ];
@@ -2226,20 +2228,23 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
   async function loadMarketData(force){
     if (state.marketLoaded && !force) return;
     try {
-      const [catSnap, tagSnap, itemSnap, planSnap] = await Promise.all([
+      const [catSnap, tagSnap, itemSnap, planSnap, discSnap] = await Promise.all([
         fbDb.ref('market/categories').once('value'),
         fbDb.ref('market/tags').once('value'),
         fbDb.ref('market/items').once('value'),
         fbDb.ref('market/subscriptionPlans').once('value'),
+        fbDb.ref('market/discountCodes').once('value'),
       ]);
       const catVal = catSnap.val() || {};
       const tagVal = tagSnap.val() || {};
       const itemVal = itemSnap.val() || {};
       const planVal = planSnap.val() || {};
+      const discVal = discSnap.val() || {};
       state.marketCategories = Object.keys(catVal).map(id => ({ id, ...catVal[id] })).sort((a,b) => (a.order||0)-(b.order||0));
       state.marketTags = Object.keys(tagVal).map(id => ({ id, ...tagVal[id] }));
       state.marketItems = Object.keys(itemVal).map(id => ({ id, ...itemVal[id] })).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
       state.marketPlans = Object.keys(planVal).map(id => ({ id, ...planVal[id] })).sort((a,b) => (a.order||0)-(b.order||0));
+      state.marketDiscountCodes = Object.keys(discVal).map(code => ({ code, ...discVal[code] })).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
       state.marketLoaded = true;
     } catch(e) {
       console.error('loadMarketData error:', e);
@@ -2273,6 +2278,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     else if (state.marketTab === 'categories') paintMarketCategories();
     else if (state.marketTab === 'tags') paintMarketTags();
     else if (state.marketTab === 'subscriptions') paintMarketPlans();
+    else if (state.marketTab === 'discounts') paintMarketDiscounts();
     else if (state.marketTab === 'reviews') paintMarketReviews();
     else if (state.marketTab === 'report') paintMarketReport();
   }
@@ -2349,12 +2355,22 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     `;
   }
 
+  // آپلود فایل‌های مارکت (فایل اصلی آیتم + تصاویر پیش‌نمایش) روی Cloudinary، دقیقاً با همون
+  // Cloud Name/Upload Preset که برای رسانه‌ی چت توی index.html استفاده می‌شه. از اندپوینت
+  // «auto» استفاده می‌کنیم چون فایل اصلی آیتم لزوماً عکس نیست (می‌تونه هر نوع فایلی باشه)،
+  // در حالی که تصاویر پیش‌نمایش همیشه عکسن؛ auto هر دو حالت رو درست تشخیص می‌ده.
+  const CLOUDINARY_CLOUD_NAME = 'crk0ggty';
+  const CLOUDINARY_UPLOAD_PRESET = 'leitner_preset';
   async function uploadMarketFile(file, itemId, kind){
-    const safeName = (file.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `market/${kind}/${itemId}/${Date.now()}_${safeName}`;
-    const ref = fbStorage.ref().child(path);
-    const snap = await ref.put(file);
-    return await snap.ref.getDownloadURL();
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(endpoint, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Cloudinary upload failed: ' + res.status);
+    const data = await res.json();
+    if (!data || !data.secure_url) throw new Error('Cloudinary upload: no secure_url in response');
+    return data.secure_url;
   }
 
   function openItemModal(itemId){
@@ -2400,6 +2416,28 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
           <label class="mlabel">فایل اصلی آیتم</label>
           <input type="file" id="itMainFile" class="mfield">
           <div style="font-size:11px;color:var(--muted);margin-top:4px" id="itMainFileCur">${it.fileName ? 'فایل فعلی: ' + esc(it.fileName) : 'فایلی آپلود نشده'}</div>
+        </div>
+
+        <div class="mfield-group" id="itWordPackFields" style="display:none;border-top:1px solid var(--border2);padding-top:12px">
+          <div class="mfield-row" style="margin-bottom:8px">
+            <div><label class="mlabel">زبان این بسته</label>
+              <select class="mfield" id="itWordPackLang">
+                <option value="">— برای همه‌ی زبان‌ها —</option>
+                ${LANGUAGE_CODES.map(c => `<option value="${c}" ${it.langCode===c?'selected':''}>${LANGUAGE_META[c].flag} ${LANGUAGE_META[c].native}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <label class="mlabel">لیست کلمات (هر خط یکی، فرمت: کلمه - معنی)</label>
+          <textarea class="mfield ta" id="itWordPackList" rows="8" placeholder="Hallo - سلام
+Danke - ممنون
+Wie geht's? - حالت چطوره؟ (sentence)" style="direction:ltr;text-align:left;font-family:monospace;font-size:12.5px">${(it.payload && it.payload.words) ? it.payload.words.map(w => w.de + ' - ' + w.fa + (w.type==='sentence' ? ' (sentence)' : '')).join('\n') : ''}</textarea>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">هر خط: «کلمه - معنی». اگه جمله‌ست، آخر خط بنویس (sentence) تا به‌جای کلمه، به‌عنوان جمله اضافه بشه.</div>
+        </div>
+
+        <div class="mfield-group" id="itCoinPackFields" style="display:none;border-top:1px solid var(--border2);padding-top:12px">
+          <label class="mlabel">🪙 تعداد سکه‌ای که با خرید این بسته به کیف‌پول کاربر اضافه می‌شه</label>
+          <input class="mfield" id="itCoinPackAmount" type="number" min="1" value="${(it.payload && it.payload.coins) || 0}">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">قیمت (تومان) این بسته رو پایین‌تر توی «قیمت تومان» تعیین کن؛ چون خودِ سکه‌ست، معمولاً قیمت سکه‌ای براش نمی‌ذاریم.</div>
         </div>
         <div class="mfield-group">
           <label class="mlabel">تصاویر پیش‌نمایش (چندتایی)</label>
@@ -2469,6 +2507,13 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     });
     backdrop.querySelector('#itMainFile').addEventListener('change', (e) => { pendingFiles.mainFile = e.target.files[0] || null; });
     backdrop.querySelector('#itPreviewFiles').addEventListener('change', (e) => { pendingFiles.previewFiles = Array.from(e.target.files || []); });
+    const syncTypeFields = () => {
+      const ty = backdrop.querySelector('#itType').value;
+      backdrop.querySelector('#itWordPackFields').style.display = ty === 'wordPack' ? '' : 'none';
+      backdrop.querySelector('#itCoinPackFields').style.display = ty === 'coinPack' ? '' : 'none';
+    };
+    backdrop.querySelector('#itType').addEventListener('change', syncTypeFields);
+    syncTypeFields();
 
     backdrop.querySelector('#itSaveBtn').addEventListener('click', async () => {
       const name = backdrop.querySelector('#itName').value.trim();
@@ -2491,10 +2536,31 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
         backdrop.querySelectorAll('.itTagChk:checked').forEach(chk => { tags[chk.value] = true; });
         const publishVal = backdrop.querySelector('#itPublishAt').value;
         const discActive = backdrop.querySelector('#itDiscActive').checked;
+        const chosenType = backdrop.querySelector('#itType').value;
+        let payloadExtra = {}, langCode = null;
+        if (chosenType === 'wordPack'){
+          langCode = backdrop.querySelector('#itWordPackLang').value || null;
+          const lines = backdrop.querySelector('#itWordPackList').value.split('\n').map(l => l.trim()).filter(Boolean);
+          const words = lines.map(line => {
+            const isSentence = /\(sentence\)\s*$/i.test(line);
+            const clean = line.replace(/\(sentence\)\s*$/i, '').trim();
+            const parts = clean.split(/\s-\s|\s\|\s/);
+            const de = (parts[0] || '').trim();
+            const fa = (parts.slice(1).join(' - ') || '').trim();
+            if (!de || !fa) return null;
+            return { de, fa, type: isSentence ? 'sentence' : 'word' };
+          }).filter(Boolean);
+          if (!words.length) { toast('حداقل یه کلمه با فرمت «کلمه - معنی» لازمه', 'err'); saveBtn.disabled = false; saveBtn.textContent = 'ذخیره'; return; }
+          payloadExtra = { words };
+        } else if (chosenType === 'coinPack'){
+          const coins = parseInt(backdrop.querySelector('#itCoinPackAmount').value, 10) || 0;
+          if (!coins) { toast('تعداد سکه رو مشخص کن', 'err'); saveBtn.disabled = false; saveBtn.textContent = 'ذخیره'; return; }
+          payloadExtra = { coins };
+        }
         const payload = {
           name,
           description: backdrop.querySelector('#itDesc').value.trim(),
-          type: backdrop.querySelector('#itType').value,
+          type: chosenType,
           categoryId: backdrop.querySelector('#itCategory').value || null,
           tags,
           fileUrl, fileName, previewUrls,
@@ -2513,6 +2579,10 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
           active: backdrop.querySelector('#itActive').checked,
           updatedAt: Date.now(),
         };
+        if (chosenType === 'wordPack' || chosenType === 'coinPack'){
+          payload.payload = payloadExtra;
+          if (chosenType === 'wordPack') payload.langCode = langCode;
+        }
         if (isNew) payload.createdAt = Date.now();
         await fbDb.ref('market/items/' + targetId).update(payload);
         toast('آیتم ذخیره شد', 'ok');
@@ -2650,6 +2720,93 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       state.marketTags = state.marketTags.filter(t => t.id !== tagId);
       paintMarketTags();
       toast('برچسب حذف شد', 'ok');
+    } catch(e) { toast('خطا در حذف', 'err'); }
+  }
+
+  // --------- کد تخفیف ---------
+  function paintMarketDiscounts(){
+    const body = document.getElementById('marketBody');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-weight:700;margin-bottom:10px">ساخت کد تخفیف جدید</div>
+        <div class="mfield-row">
+          <div><label class="mlabel">کد (بدون فاصله، فقط حروف/عدد لاتین)</label><input class="mfield" id="discCode" style="direction:ltr;text-align:left" placeholder="SUMMER40"></div>
+          <div><label class="mlabel">نوع</label>
+            <select class="mfield" id="discKind">
+              <option value="percent">درصدی (٪)</option>
+              <option value="amount">مبلغ ثابت (تومان)</option>
+            </select>
+          </div>
+        </div>
+        <div class="mfield-row">
+          <div><label class="mlabel">مقدار</label><input class="mfield" id="discValue" type="number" min="0" placeholder="مثلاً 20"></div>
+          <div><label class="mlabel">حداکثر تعداد استفاده (خالی = نامحدود)</label><input class="mfield" id="discMaxUses" type="number" min="1"></div>
+        </div>
+        <div class="mfield-row">
+          <div><label class="mlabel">تاریخ انقضا (خالی = بدون انقضا)</label><input class="mfield" id="discExpiry" type="datetime-local"></div>
+        </div>
+        <button class="btn-small" id="discAddBtn" style="margin-top:6px">${icon('plus',14)} ساخت کد</button>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:10px">کدهای موجود (${faNum(state.marketDiscountCodes.length)})</div>
+        <table class="data-table">
+          <thead><tr><th>کد</th><th>مقدار</th><th>استفاده‌شده</th><th>وضعیت</th><th></th></tr></thead>
+          <tbody>
+            ${state.marketDiscountCodes.map(d => `
+              <tr>
+                <td style="direction:ltr;text-align:left;font-family:monospace">${esc(d.code)}</td>
+                <td>${d.kind === 'amount' ? faNum(d.value||0) + ' تومان' : faNum(d.value||0) + '٪'}</td>
+                <td>${faNum(d.usedCount||0)}${d.maxUses ? ' / ' + faNum(d.maxUses) : ''}</td>
+                <td><span class="pill ${d.active === false ? 'closed' : 'active'}">${d.active === false ? 'غیرفعال' : 'فعال'}</span></td>
+                <td style="display:flex;gap:6px">
+                  <button class="icon-btn" style="width:26px;height:26px" title="${d.active === false ? 'فعال‌سازی' : 'غیرفعال‌سازی'}" onclick="__admin.toggleMarketDiscount('${d.code}', ${d.active === false})">${icon(d.active === false ? 'check' : 'power',13)}</button>
+                  <button class="icon-btn" style="width:26px;height:26px" title="حذف" onclick="__admin.deleteMarketDiscount('${d.code}')">${icon('trash',13)}</button>
+                </td>
+              </tr>
+            `).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">کد تخفیفی ثبت نشده</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('discAddBtn').addEventListener('click', async () => {
+      const code = document.getElementById('discCode').value.trim().toUpperCase().replace(/\s+/g, '');
+      const kind = document.getElementById('discKind').value;
+      const value = parseFloat(document.getElementById('discValue').value) || 0;
+      const maxUsesRaw = document.getElementById('discMaxUses').value;
+      const expiryRaw = document.getElementById('discExpiry').value;
+      if (!code || !value) { toast('کد و مقدار تخفیف رو وارد کن', 'err'); return; }
+      try {
+        await fbDb.ref('market/discountCodes/' + code).set({
+          kind, value,
+          maxUses: maxUsesRaw ? parseInt(maxUsesRaw, 10) : null,
+          usedCount: 0,
+          expiresAt: expiryRaw ? new Date(expiryRaw).getTime() : null,
+          active: true,
+          createdAt: Date.now(),
+        });
+        state.marketLoaded = false;
+        await loadMarketData(true);
+        paintMarketDiscounts();
+        toast('کد تخفیف ساخته شد', 'ok');
+      } catch(e) { toast('خطا در ساخت کد', 'err'); }
+    });
+  }
+  async function toggleMarketDiscount(code, makeActive){
+    try {
+      await fbDb.ref('market/discountCodes/' + code + '/active').set(makeActive);
+      state.marketLoaded = false;
+      await loadMarketData(true);
+      paintMarketDiscounts();
+    } catch(e) { toast('خطا در تغییر وضعیت', 'err'); }
+  }
+  async function deleteMarketDiscount(code){
+    if (!confirm('این کد تخفیف حذف شود؟')) return;
+    try {
+      await fbDb.ref('market/discountCodes/' + code).remove();
+      state.marketDiscountCodes = state.marketDiscountCodes.filter(d => d.code !== code);
+      paintMarketDiscounts();
+      toast('کد حذف شد', 'ok');
     } catch(e) { toast('خطا در حذف', 'err'); }
   }
 
