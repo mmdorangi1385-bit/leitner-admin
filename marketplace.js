@@ -1141,6 +1141,42 @@
       return it.fileUrl || null;
     },
 
+    // برخلافِ getOwnedFrameUrl (که مالکیتِ کاربرِ لوکال رو چک می‌کنه)، این تابع صرفاً یک frameId
+    // رو به لینک عکسش تبدیل می‌کنه — برای نمایش قابِ سایر کاربرها (دوست‌ها، لیدربورد، اعضای گروه)
+    // که خودشون مالکِ اون قابن، نه کاربرِ فعلی. کاتالوگِ آیتم‌ها (M.items) بین همه مشترکه.
+    frameUrlForId(frameId) {
+      if (!frameId) return null;
+      const it = M.items.find((x) => x.id === frameId || (x.payload && x.payload.frameId === frameId));
+      if (!it || it.type !== 'frame') return null;
+      return it.fileUrl || null;
+    },
+
+    // همه‌ی قاب‌هایی که کاربر واقعاً مالکشونه (خریداری‌شده یا رایگانِ فعال‌شده) رو برمی‌گردونه، با
+    // مشخص‌کردن این‌که کدومش الان فعاله؛ صفحه‌ی «تغییر عکس پروفایل» در index.html از این استفاده
+    // می‌کنه تا کاربر بتونه دقیقاً همون‌جا، بدون رفتن به مارکت، قابش رو انتخاب کنه.
+    getOwnedFrames() {
+      const st = Adapters.getAppState();
+      const activeFrameId = st && st.profile && st.profile.activeFrame;
+      return M.items
+        .filter((it) => it.type === 'frame' && isOwned(it.id))
+        .map((it) => ({
+          id: it.id,
+          name: it.name || '',
+          fileUrl: it.fileUrl || '',
+          active: !!(activeFrameId && (activeFrameId === it.id || (it.payload && it.payload.frameId === activeFrameId))),
+        }));
+    },
+    // فعال‌کردنِ «بدون قاب» — activeFrame رو پاک می‌کنه تا آواتار بدون هیچ قابی نمایش داده بشه.
+    clearFrame() {
+      const st = Adapters.getAppState();
+      if (st.profile) {
+        st.profile.activeFrame = null;
+        Adapters.persistProfile();
+      }
+      if (typeof global.render === 'function') global.render();
+      renderIfOpen();
+    },
+
     openDetail(itemId) {
       M.selectedItemId = itemId;
       M._detailModalOpen = true;

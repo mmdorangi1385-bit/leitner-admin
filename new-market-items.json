@@ -4,8 +4,14 @@
     "description": "یه تم آبی-فیروزه‌ای آروم برای کل اپ.",
     "type": "theme",
     "categoryId": "theme",
-    "tags": ["theme", "blue"],
-    "payload": { "themeColor": "#2f8f9d", "themeMode": "dark" },
+    "tags": [
+      "theme",
+      "blue"
+    ],
+    "payload": {
+      "themeColor": "#2f8f9d",
+      "themeMode": "dark"
+    },
     "coinPrice": 150,
     "cashPrice": 0,
     "free": false,
@@ -19,8 +25,14 @@
     "description": "یه تم گرم نارنجی-قرمز برای کل اپ.",
     "type": "theme",
     "categoryId": "theme",
-    "tags": ["theme", "orange"],
-    "payload": { "themeColor": "#d9612b", "themeMode": "dark" },
+    "tags": [
+      "theme",
+      "orange"
+    ],
+    "payload": {
+      "themeColor": "#d9612b",
+      "themeMode": "dark"
+    },
     "coinPrice": 150,
     "cashPrice": 0,
     "free": false,
@@ -34,9 +46,14 @@
     "description": "یه قاب طلایی دور عکس پروفایلت.",
     "type": "frame",
     "categoryId": "frame",
-    "tags": ["frame", "gold"],
-    "fileUrl": "PUT_FRAME_IMAGE_URL_HERE.png",
-    "payload": { "frameId": "frame_gold" },
+    "tags": [
+      "frame",
+      "gold"
+    ],
+    "fileUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZmYzYzQiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI2UwYTUzMCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzhhNWExMiIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI3Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNCIgcj0iNCIgZmlsbD0iI2ZmZTlhOCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iOTYiIHI9IjQiIGZpbGw9IiNmZmU5YTgiLz4KPGNpcmNsZSBjeD0iNCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjZmZlOWE4Ii8+PGNpcmNsZSBjeD0iOTYiIGN5PSI1MCIgcj0iNCIgZmlsbD0iI2ZmZTlhOCIvPgo8L3N2Zz4=",
+    "payload": {
+      "frameId": "frame_gold"
+    },
     "coinPrice": 200,
     "cashPrice": 0,
     "free": false,
@@ -50,9 +67,14 @@
     "description": "یه قاب نئونی رنگی دور عکس پروفایلت.",
     "type": "frame",
     "categoryId": "frame",
-    "tags": ["frame", "neon"],
-    "fileUrl": "PUT_FRAME_IMAGE_URL_HERE.png",
-    "payload": { "frameId": "frame_neon" },
+    "tags": [
+      "frame",
+      "neon"
+    ],
+    "fileUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJuIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjNkOWUiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI2IyM2RmZiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzNkYzlmZiIvPgo8L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Imdsb3ciPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjIuMiIgcmVzdWx0PSJiIi8+CjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iU291cmNlR3JhcGhpYyIvPjwvZmVNZXJnZT48L2ZpbHRlcj48L2RlZnM+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQ1IiBmaWxsPSJub25lIiBzdHJva2U9InVybCgjbikiIHN0cm9rZS13aWR0aD0iNiIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+Cjwvc3ZnPg==",
+    "payload": {
+      "frameId": "frame_neon"
+    },
     "coinPrice": 200,
     "cashPrice": 0,
     "free": false,
@@ -67,12 +89,27 @@
     "type": "wordPack",
     "categoryId": "wordPack",
     "langCode": "de",
-    "tags": ["wordPack", "travel"],
+    "tags": [
+      "wordPack",
+      "travel"
+    ],
     "payload": {
       "words": [
-        { "de": "der Flughafen", "fa": "فرودگاه", "type": "word" },
-        { "de": "das Gepäck", "fa": "چمدان", "type": "word" },
-        { "de": "Wo ist der Bahnhof?", "fa": "ایستگاه قطار کجاست؟", "type": "sentence" }
+        {
+          "de": "der Flughafen",
+          "fa": "فرودگاه",
+          "type": "word"
+        },
+        {
+          "de": "das Gepäck",
+          "fa": "چمدان",
+          "type": "word"
+        },
+        {
+          "de": "Wo ist der Bahnhof?",
+          "fa": "ایستگاه قطار کجاست؟",
+          "type": "sentence"
+        }
       ]
     },
     "coinPrice": 100,
@@ -89,12 +126,27 @@
     "type": "wordPack",
     "categoryId": "wordPack",
     "langCode": "de",
-    "tags": ["wordPack", "business"],
+    "tags": [
+      "wordPack",
+      "business"
+    ],
     "payload": {
       "words": [
-        { "de": "die Besprechung", "fa": "جلسه", "type": "word" },
-        { "de": "der Vertrag", "fa": "قرارداد", "type": "word" },
-        { "de": "Können wir einen Termin vereinbaren?", "fa": "می‌تونیم یه وقت هماهنگ کنیم؟", "type": "sentence" }
+        {
+          "de": "die Besprechung",
+          "fa": "جلسه",
+          "type": "word"
+        },
+        {
+          "de": "der Vertrag",
+          "fa": "قرارداد",
+          "type": "word"
+        },
+        {
+          "de": "Können wir einen Termin vereinbaren?",
+          "fa": "می‌تونیم یه وقت هماهنگ کنیم؟",
+          "type": "sentence"
+        }
       ]
     },
     "coinPrice": 100,
@@ -110,8 +162,12 @@
     "description": "۵۰۰ سکه فوری به کیف پولت اضافه می‌شه.",
     "type": "coinPack",
     "categoryId": "coinPack",
-    "tags": ["coinPack"],
-    "payload": { "coins": 500 },
+    "tags": [
+      "coinPack"
+    ],
+    "payload": {
+      "coins": 500
+    },
     "coinPrice": 0,
     "cashPrice": 49000,
     "free": false,
@@ -125,10 +181,181 @@
     "description": "۱۵۰۰ سکه فوری به کیف پولت اضافه می‌شه (صرفه بیشتر).",
     "type": "coinPack",
     "categoryId": "coinPack",
-    "tags": ["coinPack"],
-    "payload": { "coins": 1500 },
+    "tags": [
+      "coinPack"
+    ],
+    "payload": {
+      "coins": 1500
+    },
     "coinPrice": 0,
     "cashPrice": 119000,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "theme_forest": {
+    "name": "تم جنگلی",
+    "description": "یه تم سبزِ تیره و آروم، مثل یه پیاده‌روی توی جنگل.",
+    "type": "theme",
+    "categoryId": "theme",
+    "tags": [
+      "theme",
+      "green"
+    ],
+    "payload": {
+      "themeColor": "#2f8f5c",
+      "themeMode": "dark"
+    },
+    "coinPrice": 150,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "theme_royal_purple": {
+    "name": "تم بنفشِ سلطنتی",
+    "description": "یه تم بنفشِ لوکس برای کل اپ.",
+    "type": "theme",
+    "categoryId": "theme",
+    "tags": [
+      "theme",
+      "purple"
+    ],
+    "payload": {
+      "themeColor": "#6a2fb0",
+      "themeMode": "dark"
+    },
+    "coinPrice": 180,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "frame_emerald": {
+    "name": "قاب زمردی",
+    "description": "یه قاب سبزِ زمردی با برگ‌های کوچیک دور عکس پروفایلت.",
+    "type": "frame",
+    "categoryId": "frame",
+    "tags": [
+      "frame",
+      "green"
+    ],
+    "fileUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJlIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM4ZmYwYzAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzFmOWQ1YyIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBkNWMzNyIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNlKSIgc3Ryb2tlLXdpZHRoPSI3Ii8+CjxwYXRoIGQ9Ik01MCAyIFE1NiA4IDUwIDE0IFE0NCA4IDUwIDIgWiIgZmlsbD0iIzNmZDk4YSIvPgo8cGF0aCBkPSJNNTAgODYgUTU2IDkyIDUwIDk4IFE0NCA5MiA1MCA4NiBaIiBmaWxsPSIjM2ZkOThhIi8+CjxwYXRoIGQ9Ik0yIDUwIFE4IDQ0IDE0IDUwIFE4IDU2IDIgNTAgWiIgZmlsbD0iIzNmZDk4YSIvPgo8cGF0aCBkPSJNODYgNTAgUTkyIDQ0IDk4IDUwIFE5MiA1NiA4NiA1MCBaIiBmaWxsPSIjM2ZkOThhIi8+Cjwvc3ZnPg==",
+    "payload": {
+      "frameId": "frame_emerald"
+    },
+    "coinPrice": 220,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "frame_royal": {
+    "name": "قاب سلطنتی",
+    "description": "یه قاب بنفش با نگین‌های طلایی دور عکس پروفایلت.",
+    "type": "frame",
+    "categoryId": "frame",
+    "tags": [
+      "frame",
+      "purple",
+      "gold"
+    ],
+    "fileUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJyIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNjOWE2ZmYiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzZhMmZiMCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzNhMTc2MyIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNyKSIgc3Ryb2tlLXdpZHRoPSI3Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNCIgcj0iNSIgZmlsbD0iI2ZmZDM1YyIgc3Ryb2tlPSIjOGE1YTEyIiBzdHJva2Utd2lkdGg9IjEiLz4KPGNpcmNsZSBjeD0iMTgiIGN5PSIxOCIgcj0iMyIgZmlsbD0iI2ZmZDM1YyIvPjxjaXJjbGUgY3g9IjgyIiBjeT0iMTgiIHI9IjMiIGZpbGw9IiNmZmQzNWMiLz4KPGNpcmNsZSBjeD0iMTgiIGN5PSI4MiIgcj0iMyIgZmlsbD0iI2ZmZDM1YyIvPjxjaXJjbGUgY3g9IjgyIiBjeT0iODIiIHI9IjMiIGZpbGw9IiNmZmQzNWMiLz4KPC9zdmc+",
+    "payload": {
+      "frameId": "frame_royal"
+    },
+    "coinPrice": 280,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "frame_starter": {
+    "name": "قاب ساده (رایگان)",
+    "description": "یه قابِ نازکِ نقره‌ای، رایگان برای همه.",
+    "type": "frame",
+    "categoryId": "frame",
+    "tags": [
+      "frame",
+      "free"
+    ],
+    "fileUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZmYzYzQiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI2UwYTUzMCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzhhNWExMiIvPgo8L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI3Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNCIgcj0iNCIgZmlsbD0iI2ZmZTlhOCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iOTYiIHI9IjQiIGZpbGw9IiNmZmU5YTgiLz4KPGNpcmNsZSBjeD0iNCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjZmZlOWE4Ii8+PGNpcmNsZSBjeD0iOTYiIGN5PSI1MCIgcj0iNCIgZmlsbD0iI2ZmZTlhOCIvPgo8L3N2Zz4=",
+    "payload": {
+      "frameId": "frame_starter"
+    },
+    "coinPrice": 0,
+    "cashPrice": 0,
+    "free": true,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "wordpack_restaurant": {
+    "name": "بسته کلمات رستوران",
+    "description": "کلمات و جمله‌های پرکاربرد سفارش غذا و رستوران.",
+    "type": "wordPack",
+    "categoryId": "wordPack",
+    "langCode": "de",
+    "tags": [
+      "wordPack",
+      "food"
+    ],
+    "payload": {
+      "words": [
+        {
+          "de": "die Speisekarte",
+          "fa": "منو",
+          "type": "word"
+        },
+        {
+          "de": "die Rechnung",
+          "fa": "صورت‌حساب",
+          "type": "word"
+        },
+        {
+          "de": "Ich möchte bestellen.",
+          "fa": "می‌خوام سفارش بدم.",
+          "type": "sentence"
+        },
+        {
+          "de": "Können wir die Rechnung haben?",
+          "fa": "می‌شه صورت‌حساب رو بیارید؟",
+          "type": "sentence"
+        }
+      ]
+    },
+    "coinPrice": 100,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "coinpack_mega": {
+    "name": "بسته ۳۵۰۰ سکه",
+    "description": "۳۵۰۰ سکه فوری به کیف پولت اضافه می‌شه (بیشترین صرفه).",
+    "type": "coinPack",
+    "categoryId": "coinPack",
+    "tags": [
+      "coinPack"
+    ],
+    "payload": {
+      "coins": 3500
+    },
+    "coinPrice": 0,
+    "cashPrice": 249000,
     "free": false,
     "published": true,
     "active": true,

@@ -1700,10 +1700,33 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     }
   }
 
+  // نقطه‌ی ورود مشترک: به‌جای این‌که با یه کلید/مدلِ تکی امتحان کنه و اگه اون یکی کار نکرد ارور
+  // نشون بده، بین همه‌ی کلیدها × همه‌ی مدل‌های موجود می‌چرخه تا یکی جواب بده؛ فقط اگه واقعاً همه‌شون
+  // شکست خوردن، خطای نهایی رو برمی‌گردونه. این‌جوری مدیر هیچ‌وقت ارورِ «این مدل کار نمی‌کنه» نمی‌بینه.
   async function callAiAssistant(userText){
     if (!state.aiConfigKeys || !state.aiConfigKeys.length) throw new Error('کلید Gemini تنظیم نشده');
-    const key = await pickNextGeminiKey(state.aiConfigKeys);
-    const model = state.aiConfigModel || DEFAULT_GEMINI_MODEL;
+    const keys = state.aiConfigKeys;
+    const startModel = state.aiConfigModel || DEFAULT_GEMINI_MODEL;
+    const models = AVAILABLE_GEMINI_MODELS.includes(startModel)
+      ? [startModel, ...AVAILABLE_GEMINI_MODELS.filter(m => m !== startModel)]
+      : AVAILABLE_GEMINI_MODELS.slice();
+    const startKey = await pickNextGeminiKey(keys);
+    const combos = [];
+    keys.forEach((k) => models.forEach((m) => combos.push({ key: k, model: m })));
+    const ordered = [{ key: startKey, model: startModel }, ...combos.filter(c => !(c.key === startKey && c.model === startModel))];
+    let lastErr = null;
+    for (let i = 0; i < ordered.length; i++){
+      try {
+        return await callAiAssistantOnce(userText, ordered[i].key, ordered[i].model);
+      } catch(e){
+        lastErr = e;
+        // بی‌سروصدا برو سراغ ترکیب بعدی؛ فقط بعد از تمومِ همه‌ی ترکیب‌ها خطا بالا می‌ره
+      }
+    }
+    throw lastErr || new Error('هیچ‌کدوم از مدل‌های هوش مصنوعی جواب ندادن');
+  }
+
+  async function callAiAssistantOnce(userText, key, model){
     const context = buildAiContext();
     const history = state.aiChat.messages
       .filter(m => m.role === 'user' || m.role === 'bot' || m.role === 'actions')
@@ -2326,6 +2349,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
           ${catOptions}
         </select>
         <input class="search-input" id="mktItemSearch" placeholder="جستجوی آیتم...">
+        <button class="btn-small" style="display:flex;align-items:center;gap:6px" id="mktImportItemsBtn">${icon('upload',14)} ایمپورت JSON</button>
         <button class="btn-small" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px" id="mktAddItemBtn">${icon('plus',14)} افزودن آیتم</button>
       </div>
       <div id="mktItemListWrap"></div>
@@ -2334,6 +2358,7 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     document.getElementById('mktItemSearch').addEventListener('input', (e) => { state.marketSearch = e.target.value.trim().toLowerCase(); paintMarketItemList(); });
     document.getElementById('mktCatFilter').addEventListener('change', (e) => { state.marketCategoryFilter = e.target.value; paintMarketItemList(); });
     document.getElementById('mktAddItemBtn').addEventListener('click', () => openItemModal(null));
+    document.getElementById('mktImportItemsBtn').addEventListener('click', () => openImportItemsModal());
     paintMarketItemList();
   }
 
@@ -2384,6 +2409,123 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
       </div>
       <div style="margin-top:10px;font-size:11.5px;color:var(--placeholder)">${faNum(list.length)} آیتم</div>
     `;
+  }
+
+  // ===================== ایمپورت آیتم‌های مارکت از JSON =====================
+  // ورودی رو دقیقاً با فرمتِ همون فایلی که تولید کردیم سازگار می‌کنه: یه آبجکت که کلیدهاش
+  // itemId هستن (مثلاً "frame_gold") و مقدارشون فیلدهای آیتمه — همون چیزی که marketplace.js
+  // از market/items می‌خونه. با فایل یا با paste کردنِ متن کار می‌کنه.
+  function openImportItemsModal(){
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-card" onclick="event.stopPropagation()" style="max-width:560px;max-height:88vh;overflow-y:auto">
+        <h3>ایمپورت آیتم‌های مارکت</h3>
+        <div class="modal-sub">یه فایل JSON آپلود کن یا محتواش رو همین‌جا پیست کن (فرمت: آبجکتی که کلیدهاش شناسه‌ی آیتم‌ها هستن).</div>
+        <div class="mfield-group">
+          <label class="mlabel">فایل JSON</label>
+          <input type="file" id="mktImportFile" class="mfield" accept=".json,application/json">
+        </div>
+        <div class="mfield-group">
+          <label class="mlabel">یا متنِ JSON رو اینجا بچسبون</label>
+          <textarea class="mfield ta" id="mktImportText" rows="10" placeholder='{"frame_gold": {"name": "...", "type": "frame", ...}}' style="direction:ltr;text-align:left;font-family:monospace;font-size:12px"></textarea>
+        </div>
+        <div id="mktImportPreview" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-small" id="mktImportCancelBtn">انصراف</button>
+          <button class="btn-small btn-primary" id="mktImportConfirmBtn">${icon('upload',14)} ایمپورت</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#mktImportCancelBtn').addEventListener('click', () => backdrop.remove());
+    const fileInput = backdrop.querySelector('#mktImportFile');
+    const textArea = backdrop.querySelector('#mktImportText');
+    const preview = backdrop.querySelector('#mktImportPreview');
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { textArea.value = String(reader.result || ''); updateImportPreview(textArea, preview); };
+      reader.readAsText(f, 'utf-8');
+    });
+    textArea.addEventListener('input', () => updateImportPreview(textArea, preview));
+    backdrop.querySelector('#mktImportConfirmBtn').addEventListener('click', () => confirmImportItems(backdrop, textArea));
+  }
+
+  function updateImportPreview(textArea, preview){
+    const raw = textArea.value.trim();
+    if (!raw) { preview.textContent = ''; return; }
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('باید یه آبجکت باشه');
+      const ids = Object.keys(parsed);
+      preview.innerHTML = `${faNum(ids.length)} آیتم پیدا شد: <span style="color:var(--text)">${ids.map(id => esc((parsed[id] && parsed[id].name) || id)).join('، ')}</span>`;
+    } catch(e) {
+      preview.innerHTML = `<span style="color:#e05555">JSON نامعتبره: ${esc(e.message)}</span>`;
+    }
+  }
+
+  async function confirmImportItems(backdrop, textArea){
+    const raw = textArea.value.trim();
+    if (!raw) { toast('اول یه فایل انتخاب کن یا متن JSON رو بچسبون', 'err'); return; }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('فرمت باید یه آبجکتِ {itemId: {...}} باشه');
+    } catch(e) {
+      toast('JSON نامعتبره: ' + e.message, 'err');
+      return;
+    }
+    const ids = Object.keys(parsed);
+    if (!ids.length) { toast('هیچ آیتمی توی فایل پیدا نشد', 'err'); return; }
+    const confirmBtn = backdrop.querySelector('#mktImportConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'در حال ایمپورت...';
+    try {
+      const now = Date.now();
+      const updates = {};
+      ids.forEach((id) => {
+        const src = parsed[id] || {};
+        // فقط فیلدهای شناخته‌شده‌ی schema رو می‌سازیم — همون چیزی که marketplace.js و بقیه‌ی
+        // پنل ادمین انتظار دارن؛ tagsِ فایل معمولاً آرایه‌ی متنیه نه شناسه‌ی واقعیِ تگ، پس
+        // به‌جاش یه آبجکتِ خالی می‌ذاریم تا بعداً از همون فرم «ویرایش آیتم» تگ بزنی.
+        const item = {
+          name: String(src.name || '').trim() || id,
+          description: String(src.description || '').trim(),
+          type: src.type || 'other',
+          categoryId: src.categoryId || null,
+          tags: (src.tags && typeof src.tags === 'object' && !Array.isArray(src.tags)) ? src.tags : {},
+          fileUrl: src.fileUrl || '',
+          fileName: src.fileName || '',
+          previewUrls: Array.isArray(src.previewUrls) ? src.previewUrls : [],
+          coinPrice: parseInt(src.coinPrice, 10) || 0,
+          cashPrice: parseInt(src.cashPrice, 10) || 0,
+          free: !!src.free,
+          discount: src.discount || null,
+          publishAt: src.publishAt || null,
+          published: src.published !== false,
+          active: src.active !== false,
+          createdAt: src.createdAt || now,
+          updatedAt: now,
+        };
+        if (src.langCode) item.langCode = src.langCode;
+        if (src.payload && typeof src.payload === 'object') item.payload = src.payload;
+        updates[id] = item;
+      });
+      await fbDb.ref('market/items').update(updates);
+      toast(`${faNum(ids.length)} آیتم با موفقیت ایمپورت شد`, 'ok');
+      backdrop.remove();
+      state.marketLoaded = false;
+      await loadMarketData(true);
+      paintMarketItemList();
+    } catch(e) {
+      console.error('importMarketItems error:', e);
+      toast('ایمپورت ناموفق بود: ' + (e.message || 'خطای ناشناخته'), 'err');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'ایمپورت';
+    }
   }
 
   // آپلود فایل‌های مارکت (فایل اصلی آیتم + تصاویر پیش‌نمایش) روی Cloudinary، دقیقاً با همون

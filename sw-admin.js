@@ -2,7 +2,7 @@
 // «فرستادن» نوتیفیکیشن به کاربرها نداره — اون کار فقط با نوشتن روی broadcastNotifications/
 // توی فایربیس انجام می‌شه (نگاه کن به admin.html) و هر کاربر با سرویس‌ورکر خودِ اپ اصلی
 // (sw.js) نمایشش می‌ده. این فایل فقط برای کش‌کردن خودِ پنل مدیریت برای استفاده‌ی آفلاین/سریع‌تره.
-const ADMIN_CACHE_NAME = 'leitner-admin-cache-v10';
+const ADMIN_CACHE_NAME = 'leitner-admin-cache-v12';
 const ADMIN_ASSETS = ['./admin.html', './icon-hero.png', './manifest-admin.json'];
 
 self.addEventListener('install', (event) => {
