@@ -2083,9 +2083,11 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
 
   function openWordModal(wordId){
     const isNew = !wordId;
-    const w = isNew ? { id: '', de: '', fa: '', category: '', frequencyText: '', contextDe: '', contextFa: '' }
+    const w = isNew ? { id: '', de: '', fa: '', category: '', frequencyText: '', contextDe: '', contextFa: '', imageUrl: '' }
                      : state.contentWords.find(x => String(x.id) === wordId);
     if (!w) return;
+    let pendingImageFile = null;
+    let pendingImageRemoved = false;
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
     backdrop.innerHTML = `
@@ -2114,6 +2116,15 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
           <label class="mlabel">معنی جمله نمونه (فارسی)</label>
           <input class="mfield" id="wContextFa" value="${esc(w.contextFa || '')}">
         </div>
+        <div class="mfield-group" style="border-top:1px solid var(--border2);padding-top:12px">
+          <label class="mlabel">${icon('image',12)} عکس فلش‌کارت (اختیاری)</label>
+          <input type="file" id="wImageFile" class="mfield" accept="image/*">
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px" id="wImageCurWrap">
+            ${w.imageUrl ? `<img id="wImageCurImg" src="${esc(w.imageUrl)}" style="width:44px;height:44px;border-radius:8px;object-fit:cover">
+              <button type="button" class="icon-btn" id="wImageRemoveBtn" title="حذف عکس">${icon('trash',14)}</button>`
+              : `<span style="font-size:11px;color:var(--muted)" id="wImageCurEmpty">عکسی تنظیم نشده</span>`}
+          </div>
+        </div>
         <div class="modal-actions">
           <button class="btn-secondary" id="wordCancelBtn">انصراف</button>
           <button class="btn-confirm" id="wordSaveBtn">ذخیره</button>
@@ -2123,17 +2134,33 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     document.body.appendChild(backdrop);
     backdrop.addEventListener('click', () => backdrop.remove());
     backdrop.querySelector('#wordCancelBtn').addEventListener('click', () => backdrop.remove());
+    backdrop.querySelector('#wImageFile').addEventListener('change', (e) => {
+      pendingImageFile = e.target.files[0] || null;
+      pendingImageRemoved = false;
+    });
+    const removeBtn = backdrop.querySelector('#wImageRemoveBtn');
+    if (removeBtn) removeBtn.addEventListener('click', () => {
+      pendingImageFile = null;
+      pendingImageRemoved = true;
+      backdrop.querySelector('#wImageCurWrap').innerHTML = '<span style="font-size:11px;color:var(--muted)">عکسی تنظیم نشده</span>';
+    });
     backdrop.querySelector('#wordSaveBtn').addEventListener('click', async () => {
       const de = backdrop.querySelector('#wDe').value.trim();
       const fa = backdrop.querySelector('#wFa').value.trim();
       if (!de || !fa) { toast('کلمه و معنی هر دو الزامی هستند', 'err'); return; }
-      const fields = {
-        de, fa,
-        category: backdrop.querySelector('#wCategory').value.trim(),
-        contextDe: backdrop.querySelector('#wContextDe').value.trim(),
-        contextFa: backdrop.querySelector('#wContextFa').value.trim(),
-      };
+      const saveBtn = backdrop.querySelector('#wordSaveBtn');
+      saveBtn.disabled = true; saveBtn.textContent = 'در حال ذخیره...';
       try {
+        let imageUrl = w.imageUrl || '';
+        if (pendingImageRemoved) imageUrl = '';
+        if (pendingImageFile) imageUrl = await uploadMarketFile(pendingImageFile, wordId || 'new', 'wordImage');
+        const fields = {
+          de, fa,
+          category: backdrop.querySelector('#wCategory').value.trim(),
+          contextDe: backdrop.querySelector('#wContextDe').value.trim(),
+          contextFa: backdrop.querySelector('#wContextFa').value.trim(),
+          imageUrl,
+        };
         const basePath = 'contentOverrides/' + state.contentLang + '/' + state.contentLevel;
         if (isNew) {
           const newId = 'admin-' + Date.now();
@@ -2149,7 +2176,11 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
         backdrop.remove();
         state.contentWords = [];
         loadContentWords();
-      } catch(e) { toast('خطا در ذخیره‌سازی', 'err'); }
+      } catch(e) {
+        console.error('save word error:', e);
+        toast('خطا در ذخیره‌سازی' + (e && e.message ? ': ' + e.message : ''), 'err');
+        saveBtn.disabled = false; saveBtn.textContent = 'ذخیره';
+      }
     });
   }
 
@@ -2366,8 +2397,24 @@ displayLabel همیشه یک توضیح کوتاه فارسی از خودِ هم
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    const res = await fetch(endpoint, { method: 'POST', body: formData });
-    if (!res.ok) throw new Error('Cloudinary upload failed: ' + res.status);
+    const controller = new AbortController();
+    // اگه آپلود بیشتر از ۴۵ ثانیه طول بکشه (مثلاً به‌خاطر قطعی شبکه)، به‌جای گیرکردن ابدیِ
+    // دکمه‌ی ذخیره، خطا می‌ده تا کاربر بتونه دوباره امتحان کنه.
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    let res;
+    try {
+      res = await fetch(endpoint, { method: 'POST', body: formData, signal: controller.signal });
+    } catch(e){
+      if (e && e.name === 'AbortError') throw new Error('آپلود فایل بیش از حد طول کشید (تایم‌اوت). دوباره امتحان کن.');
+      throw new Error('اتصال به سرور آپلود برقرار نشد: ' + (e && e.message ? e.message : e));
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (!res.ok){
+      let detail = '';
+      try { const errBody = await res.json(); detail = (errBody && errBody.error && errBody.error.message) || ''; } catch(e){}
+      throw new Error('Cloudinary upload failed: ' + res.status + (detail ? ' — ' + detail : ''));
+    }
     const data = await res.json();
     if (!data || !data.secure_url) throw new Error('Cloudinary upload: no secure_url in response');
     return data.secure_url;
@@ -2592,7 +2639,8 @@ Wie geht's? - حالت چطوره؟ (sentence)" style="direction:ltr;text-align:
         paintMarketItemList();
       } catch(e) {
         console.error('save item error:', e);
-        toast('خطا در ذخیره‌سازی آیتم', 'err');
+        toast('خطا در ذخیره‌سازی آیتم' + (e && e.message ? ': ' + e.message : ''), 'err');
+      } finally {
         saveBtn.disabled = false; saveBtn.textContent = 'ذخیره';
       }
     });
