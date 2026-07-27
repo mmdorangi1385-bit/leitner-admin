@@ -3237,11 +3237,15 @@ Wie geht's? - حالت چطوره؟ (sentence)" style="direction:ltr;text-align:
         <span class="pill ${hasKey ? 'active' : 'banned'}">${hasKey ? icon('check',11) + ' فعال' : icon('ban',11) + ' خالی'}</span>
       </div>
       <div class="mfield-group">
-        <label class="mlabel">مدل Gemini فعال</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <label class="mlabel" style="margin:0">مدل Gemini فعال</label>
+          <button class="icon-btn" id="aiConfigRefreshModelsBtn" title="بروزرسانی لیست مدل‌های در دسترس از خودِ Google">${icon('refresh',14)}</button>
+        </div>
         <select class="mfield" id="aiConfigModelSelect">
-          ${AVAILABLE_GEMINI_MODELS.map((m) => `<option value="${esc(m)}" ${m === model ? 'selected' : ''}>${esc(m)}</option>`).join('')}
+          ${(state.aiConfigLiveModels && state.aiConfigLiveModels.length ? state.aiConfigLiveModels : AVAILABLE_GEMINI_MODELS).map((m) => `<option value="${esc(m)}" ${m === model ? 'selected' : ''}>${esc(m)}</option>`).join('')}
         </select>
-        <p style="color:var(--muted);font-size:12px;margin:6px 0 0">همه‌ی کاربرها و خودِ این پنل از همین یک مدل استفاده می‌کنن.</p>
+        <p style="color:var(--muted);font-size:12px;margin:6px 0 0">${state.aiConfigLiveModels && state.aiConfigLiveModels.length ? 'این لیست همین الان از خودِ Google گرفته شده (' + state.aiConfigLiveModels.length + ' مدل).' : 'لیستِ پیش‌فرضه؛ برای گرفتن لیستِ زنده‌ی مدل‌های واقعاً در دسترسِ کلیدهات، دکمه‌ی بروزرسانی رو بزن.'}</p>
+        <p style="color:var(--muted);font-size:12px;margin:2px 0 0">توجه: خودِ اپ برای هر درخواست، خودکار بینِ همه‌ی کلیدها و همه‌ی مدل‌های موجود در AVAILABLE_GEMINI_MODELS می‌چرخه (نه فقط همین یکی)؛ این گزینه فقط مدلِ ترجیحیِ شروع رو مشخص می‌کنه.</p>
       </div>
       <div class="mfield-group">
         <label class="mlabel">کلیدهای Gemini API (${keys.length})</label>
@@ -3266,6 +3270,7 @@ Wie geht's? - حالت چطوره؟ (sentence)" style="direction:ltr;text-align:
     });
     document.getElementById('aiConfigAddKeyBtn').addEventListener('click', addAiConfigKey);
     document.getElementById('aiConfigSaveModelBtn').addEventListener('click', saveAiConfigModel);
+    document.getElementById('aiConfigRefreshModelsBtn').addEventListener('click', refreshAvailableGeminiModels);
     wrap.querySelectorAll('[data-remove-key-idx]').forEach((btn) => {
       btn.addEventListener('click', () => removeAiConfigKey(parseInt(btn.getAttribute('data-remove-key-idx'), 10)));
     });
@@ -3300,6 +3305,34 @@ Wie geht's? - حالت چطوره؟ (sentence)" style="direction:ltr;text-align:
     const ok = await persistAiConfigKeys(keys);
     if (ok) toast('کلید حذف شد', 'ok');
     paintAiConfig();
+  }
+
+  // لیستِ زنده‌ی مدل‌های Gemini که واقعاً با کلید(های) فعلی در دسترسن رو مستقیم از خودِ Google
+  // می‌گیره (endpoint رسمیِ ListModels)، فقط مدل‌هایی که generateContent پشتیبانی می‌کنن رو نگه
+  // می‌داره، و دراپ‌داون رو باهاش پر می‌کنه؛ این‌جوری همیشه به‌جای یه لیستِ ثابت و قدیمی‌شونده،
+  // مدل‌های واقعاً موجود رو می‌بینی.
+  async function refreshAvailableGeminiModels(){
+    const keys = state.aiConfigKeys || [];
+    if (!keys.length) { toast('اول حداقل یک کلید Gemini اضافه کن', 'err'); return; }
+    const btn = document.getElementById('aiConfigRefreshModelsBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${keys[0]}&pageSize=200`);
+      if (!res.ok) throw new Error('خطای ' + res.status);
+      const data = await res.json();
+      const names = (data.models || [])
+        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => (m.name || '').replace(/^models\//, ''))
+        .filter(Boolean);
+      if (!names.length) throw new Error('هیچ مدلی برنگشت');
+      state.aiConfigLiveModels = names;
+      toast(names.length + ' مدل پیدا شد', 'ok');
+      paintAiConfig();
+    } catch (e) {
+      toast('بروزرسانی لیست مدل‌ها ناموفق بود: ' + (e && e.message || ''), 'err');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   async function saveAiConfigModel(){

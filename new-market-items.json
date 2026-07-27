@@ -1,0 +1,138 @@
+{
+  "theme_ocean": {
+    "name": "تم اقیانوسی",
+    "description": "یه تم آبی-فیروزه‌ای آروم برای کل اپ.",
+    "type": "theme",
+    "categoryId": "theme",
+    "tags": ["theme", "blue"],
+    "payload": { "themeColor": "#2f8f9d", "themeMode": "dark" },
+    "coinPrice": 150,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "theme_sunset": {
+    "name": "تم غروب",
+    "description": "یه تم گرم نارنجی-قرمز برای کل اپ.",
+    "type": "theme",
+    "categoryId": "theme",
+    "tags": ["theme", "orange"],
+    "payload": { "themeColor": "#d9612b", "themeMode": "dark" },
+    "coinPrice": 150,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "frame_gold": {
+    "name": "قاب طلایی",
+    "description": "یه قاب طلایی دور عکس پروفایلت.",
+    "type": "frame",
+    "categoryId": "frame",
+    "tags": ["frame", "gold"],
+    "fileUrl": "PUT_FRAME_IMAGE_URL_HERE.png",
+    "payload": { "frameId": "frame_gold" },
+    "coinPrice": 200,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "frame_neon": {
+    "name": "قاب نئونی",
+    "description": "یه قاب نئونی رنگی دور عکس پروفایلت.",
+    "type": "frame",
+    "categoryId": "frame",
+    "tags": ["frame", "neon"],
+    "fileUrl": "PUT_FRAME_IMAGE_URL_HERE.png",
+    "payload": { "frameId": "frame_neon" },
+    "coinPrice": 200,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "wordpack_travel": {
+    "name": "بسته کلمات سفر",
+    "description": "کلمات و جمله‌های پرکاربرد سفر.",
+    "type": "wordPack",
+    "categoryId": "wordPack",
+    "langCode": "de",
+    "tags": ["wordPack", "travel"],
+    "payload": {
+      "words": [
+        { "de": "der Flughafen", "fa": "فرودگاه", "type": "word" },
+        { "de": "das Gepäck", "fa": "چمدان", "type": "word" },
+        { "de": "Wo ist der Bahnhof?", "fa": "ایستگاه قطار کجاست؟", "type": "sentence" }
+      ]
+    },
+    "coinPrice": 100,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "wordpack_business": {
+    "name": "بسته کلمات تجاری",
+    "description": "کلمات و جمله‌های پرکاربرد محیط کار.",
+    "type": "wordPack",
+    "categoryId": "wordPack",
+    "langCode": "de",
+    "tags": ["wordPack", "business"],
+    "payload": {
+      "words": [
+        { "de": "die Besprechung", "fa": "جلسه", "type": "word" },
+        { "de": "der Vertrag", "fa": "قرارداد", "type": "word" },
+        { "de": "Können wir einen Termin vereinbaren?", "fa": "می‌تونیم یه وقت هماهنگ کنیم؟", "type": "sentence" }
+      ]
+    },
+    "coinPrice": 100,
+    "cashPrice": 0,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "coinpack_small": {
+    "name": "بسته ۵۰۰ سکه",
+    "description": "۵۰۰ سکه فوری به کیف پولت اضافه می‌شه.",
+    "type": "coinPack",
+    "categoryId": "coinPack",
+    "tags": ["coinPack"],
+    "payload": { "coins": 500 },
+    "coinPrice": 0,
+    "cashPrice": 49000,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "coinpack_large": {
+    "name": "بسته ۱۵۰۰ سکه",
+    "description": "۱۵۰۰ سکه فوری به کیف پولت اضافه می‌شه (صرفه بیشتر).",
+    "type": "coinPack",
+    "categoryId": "coinPack",
+    "tags": ["coinPack"],
+    "payload": { "coins": 1500 },
+    "coinPrice": 0,
+    "cashPrice": 119000,
+    "free": false,
+    "published": true,
+    "active": true,
+    "createdAt": 0,
+    "updatedAt": 0
+  }
+}

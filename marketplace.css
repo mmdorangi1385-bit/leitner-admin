@@ -1,0 +1,231 @@
+/* =========================================================
+   marketplace.css — استایل مارکت‌پلیس، هماهنگ با تم اصلی اپ
+   از همان متغیرهای CSS اپ اصلی استفاده می‌کند:
+   --bg --panel --panel2 --text --muted --brass --brass-dark
+   --border --border2 --divider --wine --sage-strong --violet
+   اگر این متغیرها در پروژه شما نام دیگری دارند، فقط همین‌جا
+   عوضشون کنید؛ بقیه فایل دست نخورده می‌مونه.
+   ========================================================= */
+
+#market-root { direction: rtl; }
+#market-root.hide { display: none; }
+
+.market-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ---------- هدر ---------- */
+.market-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex-shrink: 0;
+}
+.market-header-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 19px; font-weight: 600; color: var(--brass);
+  flex: 1;
+}
+.market-close-btn, .market-icon-btn {
+  background: var(--panel2); border: 1px solid var(--border2);
+  color: var(--text); width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.market-wallet-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(180deg, var(--brass), var(--brass-dark));
+  color: #201a10; font-weight: 700; font-size: 13px;
+  padding: 7px 12px; border-radius: 20px; cursor: pointer;
+  flex-shrink: 0;
+}
+.market-wallet-chip svg { width: 15px; height: 15px; }
+
+/* ---------- تب‌ها ---------- */
+.market-tabs {
+  display: flex; gap: 4px; background: var(--panel);
+  padding: 6px 10px 0; flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.market-tab {
+  flex: 1; text-align: center; padding: 10px 6px 12px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  border-bottom: 2px solid transparent; cursor: pointer;
+  background: none; border-left: none; border-right: none; border-top: none;
+}
+.market-tab.active { color: var(--brass); border-bottom-color: var(--brass); }
+
+/* ---------- بدنه قابل اسکرول ---------- */
+.market-body { flex: 1; overflow-y: auto; padding: 14px 16px 90px; }
+
+/* ---------- جستجو و فیلتر ---------- */
+.market-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.market-search-input {
+  flex: 1; background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text); padding: 11px 14px;
+  font-family: inherit; font-size: 14px;
+}
+.market-cats-scroll {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px;
+  scrollbar-width: none;
+}
+.market-cats-scroll::-webkit-scrollbar { display: none; }
+.market-cat-chip {
+  flex: 0 0 auto; padding: 8px 16px; border-radius: 20px;
+  background: var(--panel2); border: 1px solid var(--border2);
+  color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.market-cat-chip.active { background: var(--brass); border-color: var(--brass); color: #201a10; }
+
+/* ---------- گرید محصولات ---------- */
+.market-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+}
+@media (min-width: 620px) { .market-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.market-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden; cursor: pointer;
+  display: flex; flex-direction: column; position: relative;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.market-card:active { transform: scale(0.97); }
+.market-card-img-wrap {
+  width: 100%; aspect-ratio: 1.3 / 1; background: var(--panel2);
+  overflow: hidden; position: relative;
+}
+.market-card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.market-card-badge-free {
+  position: absolute; top: 8px; inset-inline-start: 8px;
+  background: var(--sage-strong); color: #06220f;
+  font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 8px;
+}
+.market-card-badge-discount {
+  position: absolute; top: 8px; inset-inline-end: 8px;
+  background: var(--wine); color: #fff;
+  font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 8px;
+  animation: marketPulse 1.4s ease-in-out infinite;
+}
+@keyframes marketPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(182,92,92,0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(182,92,92,0); }
+}
+.market-card-badge-owned {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 12.5px;
+}
+.market-card-body { padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.market-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
+.market-card-cat { font-size: 10.5px; color: var(--muted); }
+.market-card-price-row { display: flex; align-items: center; gap: 6px; margin-top: auto; }
+.market-card-price { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13px; font-weight: 700; color: var(--brass); }
+.market-card-price-old { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; color: var(--muted); text-decoration: line-through; }
+.market-card-free-label { font-size: 12px; font-weight: 700; color: var(--sage-strong); }
+
+/* ---------- مودال جزئیات محصول ---------- */
+.market-modal-overlay {
+  position: fixed; inset: 0; z-index: 450; background: rgba(0,0,0,0.55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.market-modal-overlay.center { align-items: center; padding: 16px; }
+.market-modal {
+  width: 100%; max-width: 460px; background: var(--panel);
+  border-radius: 20px 20px 0 0; padding: 18px; max-height: 88vh; overflow-y: auto;
+  border: 1px solid var(--border); border-bottom: none;
+}
+.market-modal-overlay.center .market-modal { border-radius: 20px; border-bottom: 1px solid var(--border); }
+.market-modal-drag { width: 40px; height: 4px; border-radius: 3px; background: var(--border2); margin: 0 auto 14px; }
+.market-modal-img { width: 100%; border-radius: 14px; margin-bottom: 14px; aspect-ratio: 1.6/1; object-fit: cover; background: var(--panel2); }
+.market-modal-title { font-family: 'Fraunces', Georgia, serif; font-size: 19px; color: var(--brass); margin-bottom: 4px; }
+.market-modal-desc { font-size: 13px; color: var(--muted); line-height: 1.8; margin-bottom: 16px; }
+.market-modal-price-box {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--panel2); border: 1px solid var(--border2); border-radius: 14px;
+  padding: 14px; margin-bottom: 14px;
+}
+.market-modal-price-num { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 20px; font-weight: 700; color: var(--brass); }
+.market-buy-btn {
+  width: 100%; background: linear-gradient(180deg, var(--brass), var(--brass-dark));
+  color: #201a10; border: none; border-radius: 12px; padding: 14px;
+  font-family: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer;
+}
+.market-buy-btn.disabled { opacity: 0.5; pointer-events: none; }
+.market-buy-btn.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border2); margin-top: 8px; }
+.market-buy-btn.owned { background: var(--sage-strong); color: #06220f; }
+
+/* ---------- کیف پول / تاریخچه ---------- */
+.market-wallet-card {
+  background: linear-gradient(160deg, var(--panel2), var(--panel));
+  border: 1px solid var(--border2); border-radius: 16px; padding: 18px; margin-bottom: 16px;
+  text-align: center;
+}
+.market-wallet-balance { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 30px; font-weight: 700; color: var(--brass); }
+.market-wallet-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.market-history-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 12px; margin-bottom: 8px; font-size: 12.5px;
+}
+.market-history-amount.positive { color: var(--sage-strong); font-weight: 700; }
+.market-history-amount.negative { color: var(--wine); font-weight: 700; }
+
+/* ---------- اشتراک ---------- */
+.market-sub-plan {
+  border: 1px solid var(--border2); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+  background: var(--panel2); position: relative;
+}
+.market-sub-plan.recommended { border-color: var(--brass); }
+.market-sub-plan-badge {
+  position: absolute; top: -10px; inset-inline-start: 14px;
+  background: var(--brass); color: #201a10; font-size: 10.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: 8px;
+}
+.market-sub-plan-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.market-sub-plan-price { font-family: 'JetBrains Mono', Consolas, monospace; color: var(--brass); font-size: 22px; font-weight: 700; margin: 6px 0; }
+.market-sub-benefits { list-style: none; padding: 0; margin: 10px 0; font-size: 12.5px; color: var(--muted); }
+.market-sub-benefits li { padding: 4px 0; display: flex; gap: 6px; align-items: center; }
+.market-sub-benefits li svg { color: var(--sage-strong); width: 14px; height: 14px; flex-shrink: 0; }
+.market-sub-status { text-align: center; padding: 12px; font-size: 12.5px; color: var(--muted); }
+
+/* ---------- دستیار هوش مصنوعی مارکت ---------- */
+.market-ai-box {
+  background: linear-gradient(160deg, rgba(139,111,201,0.15), var(--panel2));
+  border: 1px solid var(--border2); border-radius: 16px; padding: 14px; margin-bottom: 16px;
+}
+.market-ai-title { font-size: 13px; font-weight: 700; color: var(--violet); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.market-ai-suggest-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.market-ai-input-row { display: flex; gap: 8px; margin-top: 10px; }
+.market-ai-input {
+  flex: 1; background: var(--panel); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 9px 12px; color: var(--text); font-family: inherit; font-size: 13px;
+}
+.market-ai-answer { font-size: 12.5px; line-height: 1.8; color: var(--text); margin-top: 10px; background: var(--panel); border-radius: 10px; padding: 10px 12px; }
+
+/* ---------- خالی/لودینگ ---------- */
+.market-empty { text-align: center; padding: 40px 10px; color: var(--muted); font-size: 13px; }
+.market-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--brass); color: var(--text);
+  padding: 12px 20px; border-radius: 14px; font-size: 13px; z-index: 500;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+/* ---------- نظرات محصول ---------- */
+.market-reviews-section { border-top: 1px solid var(--border2); margin-top: 14px; padding-top: 4px; }
+.market-review-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.market-review-form .market-search-input { margin-bottom: 0; }
+.market-review-row {
+  padding: 10px 0; border-bottom: 1px solid var(--border2);
+}
+.market-review-row:last-child { border-bottom: none; }
+
+/* ---------- علاقه‌مندی‌ها (دکمه قلب در مودال) ---------- */
+.market-icon-btn svg { width: 18px; height: 18px; }
