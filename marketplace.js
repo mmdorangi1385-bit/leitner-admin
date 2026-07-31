@@ -51,8 +51,18 @@
     isFirebaseReady() { return !!global.firebaseReady && !!global.fbDb; },
     db() { return global.fbDb || null; },
     firebase() { return global.firebase || null; },
-    applyThemeColor(color) { if (typeof global.applyThemeColor === 'function') global.applyThemeColor(color); },
-    applyThemeMode(mode) { if (typeof global.applyThemeMode === 'function') global.applyThemeMode(mode); },
+    // نکته‌ی مهم: قبلاً اینجا global.applyThemeColor/applyThemeMode صدا زده می‌شد که فقط
+    // پیش‌نمایشِ لحظه‌ای بود و هیچ‌جا ذخیره نمی‌شد؛ در نتیجه با رفرش یا حتی رندر بعدی، تمِ
+    // خریداری‌شده خودش رو از دست می‌داد. الان از setThemeColor/setThemeMode (که هم اعمال
+    // می‌کنن هم توی localStorage/state ذخیره می‌کنن) استفاده می‌کنیم تا واقعاً «سرِ جاش» بمونه.
+    applyThemeColor(color) {
+      if (typeof global.setThemeColor === 'function') global.setThemeColor(color);
+      else if (typeof global.applyThemeColor === 'function') global.applyThemeColor(color);
+    },
+    applyThemeMode(mode) {
+      if (typeof global.setThemeMode === 'function') global.setThemeMode(mode);
+      else if (typeof global.applyThemeMode === 'function') global.applyThemeMode(mode);
+    },
     persistProfile() { if (typeof global.persistProfile === 'function') global.persistProfile(); },
     getUserId() {
       const st = this.getAppState();
@@ -61,11 +71,12 @@
     // بسته‌ی کلمات خریداری‌شده رو مستقیم توی جعبه لایتنر کاربر (state.cards واقعی اپ) وارد می‌کنه.
     // کارت‌هایی که از قبل با همون متن و نوع وجود دارن، دوباره اضافه نمی‌شن (جلوگیری از تکراری).
     // برمی‌گردونه: تعداد کارت‌هایی که واقعاً تازه اضافه شدن.
-    importCards(words) {
+    importCards(words, categoryName) {
       if (typeof global.persistCards !== 'function' || !Array.isArray(words)) return 0;
       const st = this.getAppState();
       const today = typeof global.todayStr === 'function' ? global.todayStr() : new Date().toISOString().slice(0, 10);
       const nowIso = new Date().toISOString();
+      const cat = (categoryName && typeof global.findOrCreateNamedCategory === 'function') ? global.findOrCreateNamedCategory(categoryName) : null;
       st.cards = st.cards || [];
       const existing = new Set(st.cards.map((c) => (c.de || '').trim().toLowerCase() + '|' + (c.type || 'word')));
       const newCards = [];
@@ -74,7 +85,7 @@
         const key = String(w.de).trim().toLowerCase() + '|' + (w.type || 'word');
         if (existing.has(key)) return;
         existing.add(key);
-        newCards.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, de: String(w.de).trim(), fa: String(w.fa).trim(), box: 1, nextReview: today, createdAt: nowIso, type: w.type === 'sentence' ? 'sentence' : 'word', categoryId: null });
+        newCards.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, de: String(w.de).trim(), fa: String(w.fa).trim(), box: 1, nextReview: today, createdAt: nowIso, type: w.type === 'sentence' ? 'sentence' : 'word', categoryId: cat ? cat.id : null });
       });
       if (!newCards.length) return 0;
       st.cards = [...st.cards, ...newCards];
@@ -340,30 +351,47 @@
     },
 
     // کسر اتمیک؛ اگر موجودی کافی نباشد، تراکنش abort می‌شود و false برمی‌گردد.
+    //
+    // رفع باگ «۱۰۰۰۰ سکه دارم ولی می‌گه سکه نداری»:
+    // فایربیس تابعِ transaction رو همیشه اول یه‌بار با مقدارِ *کشِ محلی* صدا می‌زنه؛ اگه دقیقاً
+    // همین مسیر (users/{uid}/wallet/coins) قبلاً روی این دستگاه cache نشده باشه (که با توجه به
+    // این‌که loadUserData فقط والدش یعنی «wallet» رو once می‌خونه، خیلی وقت‌ها همینه)، این صدازدنِ
+    // اول با cur=null انجام می‌شد. کدِ قبلی همون‌جا فرض می‌کرد موجودی صفره و چون صفر از قیمت کمتره
+    // بلافاصله abort می‌کرد (return بدون مقدار) — و abort یعنی لغوِ قطعیِ تراکنش، نه «صبر کن مقدار
+    // واقعی رو از سرور بگیر». در نتیجه فایربیس هیچ‌وقت فرصت نمی‌کرد با موجودیِ واقعیِ سرور (۱۰۰۰۰)
+    // دوباره امتحان کنه و خرید همیشه با پیغام «سکه نداری» شکست می‌خورد، حتی با موجودیِ کافی.
+    // رفعش: قبل از تراکنش، همین مسیر رو با once('value') می‌خونیم تا کشِ محلی گرم بشه و اولین
+    // صدازدنِ transaction همون مقدارِ واقعی رو ببینه، نه null.
     spend(amount, reason) {
       const uid = Adapters.getUid();
       if (Adapters.isFirebaseReady() && uid) {
         const ref = Adapters.db().ref('users/' + uid + '/wallet/coins');
-        return ref.transaction((cur) => {
+        return ref.once('value').catch(() => null).then(() => ref.transaction((cur) => {
           const bal = cur || 0;
-          if (bal < amount) return; // abort: undefined یعنی لغو تراکنش
+          if (bal < amount) return; // abort واقعی: این‌بار cur مقدارِ واقعیِ سرورِ
           return bal - amount;
-        }).then((res) => {
-          if (!res.committed) return false;
+        })).then((res) => {
+          if (!res.committed) return { ok: false, reason: 'insufficient_coins' };
           const newBal = res.snapshot.val();
           M.wallet.coins = newBal;
           M.wallet.lastUpdated = Date.now();
           this._writeHistory({ type: 'spend', amount: -amount, reason, at: Date.now() });
           renderIfOpen();
-          return true;
-        }).catch(() => false);
+          return { ok: true };
+        }).catch((e) => {
+          // قبلاً هر خطایی (مثلاً permission-denied توی Security Rules یا قطعیِ شبکه) هم به همین
+          // "سکه نداری" ترجمه می‌شد که کاملاً گمراه‌کننده بود. الان جدا نگه‌ش می‌داریم و توی
+          // کنسول لاگ می‌کنیم تا اگه دوباره پیش اومد، دلیلِ واقعی معلوم باشه.
+          console.error('Marketplace: wallet spend failed', e);
+          return { ok: false, reason: 'error', error: e };
+        });
       }
-      if ((M.wallet.coins || 0) < amount) return Promise.resolve(false);
+      if ((M.wallet.coins || 0) < amount) return Promise.resolve({ ok: false, reason: 'insufficient_coins' });
       M.wallet.coins -= amount;
       M.wallet.lastUpdated = Date.now();
       this._writeHistory({ type: 'spend', amount: -amount, reason, at: Date.now() });
       renderIfOpen();
-      return Promise.resolve(true);
+      return Promise.resolve({ ok: true });
     },
 
     onXpEarned(xpAmount) {
@@ -464,8 +492,8 @@
     if (isOwned(item.id)) return Promise.resolve({ ok: false, reason: 'already_owned' });
     const now = Date.now();
     const price = effectivePriceField(item, 'coinPrice', now);
-    return walletApi.spend(price, 'purchase:' + item.id).then((success) => {
-      if (!success) return { ok: false, reason: 'insufficient_coins' };
+    return walletApi.spend(price, 'purchase:' + item.id).then((res) => {
+      if (!res.ok) return res;
       recordPurchase(item, 'coins', price);
       return { ok: true };
     });
@@ -512,7 +540,7 @@
     } else if (item.type === 'wordPack' && item.payload && Array.isArray(item.payload.words)) {
       const rec = M.purchases[item.id];
       if (rec && rec.wordPackImported) { showToast(Adapters.t('marketApplied')); return; }
-      const added = Adapters.importCards(item.payload.words);
+      const added = Adapters.importCards(item.payload.words, item.name);
       if (rec) rec.wordPackImported = true;
       persistAll();
       const uid = Adapters.getUid();
@@ -1222,7 +1250,10 @@
         if (res && res.ok) {
           showToast(Adapters.t('marketPurchaseSuccess'));
           M._detailModalOpen = false;
-          if (it.type === 'wordPack' || it.type === 'coinPack') activateItem(it);
+          // درخواست کاربر: هر آیتمی که خریده می‌شه باید خودکار «سرِ جاش» بره — تم فعال بشه،
+          // فریم روی پروفایل بشینه، بسته‌کلمات به جعبه اضافه بشه، بسته‌سکه به کیف‌پول برسه —
+          // نه این‌که کاربر مجبور باشه بعد از خرید یه دکمه‌ی «فعال‌سازی» جدا هم بزنه.
+          if (it.type === 'wordPack' || it.type === 'coinPack' || it.type === 'theme' || it.type === 'frame') activateItem(it);
           render();
         } else if (res && res.reason === 'already_owned') {
           showToast(Adapters.t('marketAlreadyOwned'));
